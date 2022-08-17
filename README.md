@@ -2,6 +2,7 @@
 This repository contains a set of utilities to set up an offline hillslope-mode simulation with MOSART (Model for Scale Adaptive River Transport) (Li et al. 2013), which is the river routing component of E3SM (Energy Exascale Earth System Model) (Golaz et al. 2019). The utilities convert spatial representations of land surface areas as hillslopes and river links provided by the Hillsloper utility (courtesy Jon Schwenk, Los Alamos National Laboratory) into land surface tiles representing computational hillslopes and river links, which are the basic computational elements used in MOSART.
 
 <img src="/assets/img/mosart_sag_basin.png" width="424">
+*Figure 1: Example of E3SM-MOSART offline hillslope mode showing Hillsloper discretization of the Sagavanirktok River Basin, North Slope Arctic Alaska and MOSART routed discharge*
 <!-- ![Alt text](/assets/img/mosart_sag_basin.png?raw=true "MOSART Sag Basin") -->
 
 # usage
