@@ -1,0 +1,14 @@
+# matlab files
+*.m~
+*.asv
+*.mex*
+octave-workspace
+
+# data files, etc
+*.nc
+*.grd
+*.vtk
+*.off
+*.obj
+*.stl
+*.tif
