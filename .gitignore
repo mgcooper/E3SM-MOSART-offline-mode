@@ -1,14 +1,31 @@
-# matlab files
+# matlab
 *.m~
 *.asv
 *.mex*
 octave-workspace
+# *.mlx # matlab notebook
 
-# data files, etc
+# big data
 *.nc
+*.nc4
+*.h5
+*.hd5
+*.bin
 *.grd
 *.vtk
 *.off
 *.obj
 *.stl
 *.tif
+*.tiff
+
+# shapefiles
+# *.shp
+# *.prj
+# *.ovr
+# *.dbf
+# *.shx
+
+# qgis
+*.qgz
+*.qgs
