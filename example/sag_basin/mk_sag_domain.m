@@ -4,16 +4,16 @@ clean
 %%      set paths
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
-path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
-path.sag    = setpath('interface/data/hillsloper/sag_basin/');
-cd(path.save)
+pathdata   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
+pathsave   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
+pathhillsloper    = setpath('interface/data/hillsloper/sag_basin/');
+cd(pathsave)
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %%      Load the hillsloper data and modify it for MOSART 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load([path.sag 'mosart_hillslopes']);  
+load([pathhillsloper 'mosart_hillslopes']);  
 slopes = mosart_hillslopes; clear mosart_hillslopes
 
 % to compute the surface area of each sub-basin in units of steradians
@@ -44,8 +44,8 @@ end
 %==========================================================================
 %% 2. read in icom files to use as a template, and write the new file
 %==========================================================================
-fdomain     = [path.data 'domain_u_icom_half_sparse_grid_c200610.nc'];
-fsave       = [path.save 'domain_sag_test.nc'];
+fdomain     = [pathdata 'domain_u_icom_half_sparse_grid_c200610.nc'];
+fsave       = [pathsave 'domain_sag_test.nc'];
 if exist(fsave,'file'); delete(fsave); end
 
 myschema.xc     = ncinfo(fdomain,'xc');
