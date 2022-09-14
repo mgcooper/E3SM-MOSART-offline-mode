@@ -1,4 +1,4 @@
-function newslopes = mos_removeslopes(slopes,rm_slope,rp_slope,rp_flag)
+function newslopes = removeslopes(slopes,rm_slope,rp_slope,rp_flag)
 %REMOVE_SLOPES merge one hillslope with another
 
 % slopes    = structure (shapefile) containing hillslopes

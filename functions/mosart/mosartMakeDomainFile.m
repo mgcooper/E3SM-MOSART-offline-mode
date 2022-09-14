@@ -1,4 +1,4 @@
-function [schema,info,data] = mos_makedomain(slopes,ftemplate,fsave,opts)
+function [schema,info,data] = mosartMakeDomainFile(slopes,ftemplate,fsave,opts)
 
 % Inputs: 
 %   'slopes' a structure with the following fields:
