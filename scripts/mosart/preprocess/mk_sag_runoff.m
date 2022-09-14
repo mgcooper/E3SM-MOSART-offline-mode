@@ -7,21 +7,24 @@ clean
 
 %% set paths
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-p.temp   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
-p.forc   = '/Users/coop558/mydata/e3sm/inputdata/lnd/dlnd7/hcru_hcru/';
-p.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/';
-p.data    = setpath('interface/data/hillsloper/');
+p.data  = setpath('interface/data/hillsloper/');
+p.temp  = '/Users/coop558/mydata/e3sm/input/icom/';
+p.forc  = '/Users/coop558/mydata/e3sm/forcing/lnd/dlnd7/hcru_hcru/';
+p.save  = '/Users/coop558/myprojects/e3sm/sag/input/';
+
 cd(p.save);
 
 fmosart     = [p.temp 'MOSART_icom_half_c200624.nc'];
 frunoff     = [p.forc 'GPCC.daily.nc'];
 fsave       = [p.save 'runoff_sag_test.nc'];
+
 if exist(fsave,'file'); delete(fsave); end
 
 
 %% load the hillsloper data that has ID and dnID
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 load([p.data 'sag_hillslopes']); slopes = newslopes; clear newslopes;
+
 sagvars     = fieldnames(slopes);
 ID          = [slopes.ID];
 dnID        = [slopes.dnID];
