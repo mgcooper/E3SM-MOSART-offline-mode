@@ -4,16 +4,21 @@ clean
 %%      set paths
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
-path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
-path.sag    = setpath('interface/data/hillsloper/sag_basin/');
-cd(path.save)
+% set paths
+path_domain_data           = '../data/hillsloper/';
+path_domain_file_template  = '../data/templates/icom/';
+path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
+
+% path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
+% path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
+% path.sag    = setpath('interface/data/hillsloper/sag_basin/');
+% cd(path.save)
 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %%      Load the hillsloper data and modify it for MOSART 
 %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load([path.sag 'mosart_hillslopes']);  
+load([path_domain_data 'mosart_hillslopes']);
 slopes = mosart_hillslopes; clear mosart_hillslopes
 
 % to compute the surface area of each sub-basin in units of steradians
@@ -33,19 +38,23 @@ area    = ([slopes.area].*4.*pi./Aearth)';      % sr
 % 12961625875
 
 % compute the bounding box of each sub-basin
-for i = 1:length(slopes)
-    bbox        = slopes(i).bbox;
+for n = 1:length(slopes)
+    bbox        = slopes(n).bbox;
     xbox        = bbox(:,1);
     ybox        = bbox(:,2);
-    xv(:,i)     = [xbox(1) xbox(2) xbox(2) xbox(1)]; % ll ccw
-    yv(:,i)     = [ybox(1) ybox(1) ybox(2) ybox(2)];
+    xv(:,n)     = [xbox(1) xbox(2) xbox(2) xbox(1)]; % ll ccw
+    yv(:,n)     = [ybox(1) ybox(1) ybox(2) ybox(2)];
 end
 
 %==========================================================================
 %% 2. read in icom files to use as a template, and write the new file
 %==========================================================================
-fdomain     = [path.data 'domain_u_icom_half_sparse_grid_c200610.nc'];
+
+fdomain     = 'domain_u_icom_half_sparse_grid_c200610.nc';
+fdomain     = [path_domain_file_template fdomain];
+
 fsave       = [path.save 'domain_sag_test.nc'];
+
 if exist(fsave,'file'); delete(fsave); end
 
 myschema.xc     = ncinfo(fdomain,'xc');
