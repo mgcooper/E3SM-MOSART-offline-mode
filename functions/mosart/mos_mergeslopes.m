@@ -1,5 +1,5 @@
 function hs_new = mos_mergeslopes(slopes,slope_id)
-   %MERGE_SLOPES merge the plus/minus hillslopes with each other
+%MERGE_SLOPES merge the plus/minus hillslopes with each other
    
    % slopes    = structure (shapefile) containing hillslopes
    % slope_id  = id of the slope to be removed

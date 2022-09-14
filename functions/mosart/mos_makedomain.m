@@ -5,16 +5,6 @@ function [schema,info,data] = mos_makedomain(slopes,ftemplate,fsave,opts)
 %       longxy  = latitude of computational unit, scalar
 %       latixy  = longitude of computational unit, scalar
 %       area    = area in m2
-    
-% note - the dimensions of the 2d variables will be ni,nj, but Donghui says
-% if nj=1, the coupler treats the data as 1-d. ALSO note that the runoff
-% forcings should match the domain file, not MOSART, so in the runoff
-% frocings I need to have ni,nj
-
-% Say in your case, I think ni = 22, nj =1 for the runoff domain. Then
-% MOSART input should have gridcell dimension, which have the size of 22 as
-% well. And they should have the same order (e.g., matched ID). (edited)
-
 
 % these are the variables created by this function:
    %vars    = {'xc','yc','xv','yv','mask','area','frac'};
@@ -107,3 +97,13 @@ else
       data = ncreaddata(fsave);
     end
 end
+
+
+% note - the dimensions of the 2d variables will be ni,nj, but Donghui says
+% if nj=1, the coupler treats the data as 1-d. ALSO note that the runoff
+% forcings should match the domain file, not MOSART, so in the runoff
+% frocings I need to have ni,nj
+
+% Say in your case, I think ni = 22, nj =1 for the runoff domain. Then
+% MOSART input should have gridcell dimension, which have the size of 22 as
+% well. And they should have the same order (e.g., matched ID). (edited)
