@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# mgc: keep this as-is for reference
+# modified version is run.icom_mpas.sh
+
 RES=MOS_USRDAT
 COMPSET=RMOSGPCC
 MACH=compy
@@ -58,6 +61,7 @@ EOF
 
 ./case.setup
 
+# mgc this builds a file list and then adds it to user_dlnd but that shouldn't be necessary
 files=""
 for i in {1979..2007}
 do
