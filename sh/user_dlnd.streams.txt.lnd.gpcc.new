@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<file id="stream" version="1.0">
+<dataSource>
+   GENERIC
+</dataSource>
+<domainInfo>
+  <variableNames>
+      time     time
+      lon      lon
+      lat      lat
+  </variableNames>
+  <filePath>
+     /compyfs/inputdata/lnd/dlnd7/hcru_hcru
+  </filePath>
+  <fileNames>
+     GPCC.daily.runoff.1979-2008.nc
+  </fileNames>
+</domainInfo>
+<fieldInfo>
+   <variableNames>
+     QOVER     rofsur
+     QDRAI     rofsub
+   </variableNames>
+   <filePath>
+     /compyfs/inputdata/lnd/dlnd7/hcru_hcru
+   </filePath>
+   <fileNames>
+    GPCC.daily.runoff.1979-2008.nc
+   </fileNames>
+   <offset>
+      0
+   </offset>
+</fieldInfo>
+</file>
