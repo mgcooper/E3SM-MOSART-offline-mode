@@ -20,7 +20,7 @@ MACH=compy
 COMPILER=intel
 PROJECT=esmd
 SRC_DIR=/qfs/people/coop558/source/unstructured/E3SM
-CASE_DIR=/qfs/people/coop558/projects/e3sm/unstructured/sag/$SITE_NAME/cases
+CASE_DIR=/qfs/people/coop558/projects/e3sm/cases
 
 # set case name
 CASE_NAME=${SITE_NAME}.${START_YEAR}.${END_YEAR}.run.$(date "+%Y-%m-%d").${RUN_ID}

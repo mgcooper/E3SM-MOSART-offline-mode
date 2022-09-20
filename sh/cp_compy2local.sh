@@ -1,6 +1,8 @@
 #!/bin/bash
-filename=dlnd.streams.txt.lnd.gpcc.icom_mpas
-SRCPATH=coop558@compy01:/qfs/people/coop558/data/e3sm/usrdat/$filename
-DSTPATH=$(pwd)/$filename
+
+# to copy an individual file to this directory:
+SRCNAME=dlnd.streams.txt.lnd.gpcc.icom_mpas
+SRCPATH=$COMPYDATAPATH/usrdat/$SRCNAME
+DSTPATH=$(pwd)/$SRCNAME
 
 rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
