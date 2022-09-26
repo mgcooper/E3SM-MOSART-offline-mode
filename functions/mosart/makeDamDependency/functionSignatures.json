@@ -1,0 +1,14 @@
+{
+   "_schemaVersion": "1.0.0",
+   "_comment": "this is an example comment",
+   "makeDamDependency":
+   {
+      "inputs":
+      [
+         {"name":"Mesh",      "kind":"required",   "type":["struct"]},
+         {"name":"Dams",      "kind":"required",   "type":["table"]},
+         {"name":"plotfig",   "kind":"namevalue",  "type":["logical","scalar"],"purpose":"Option"},
+         {"name":"damname",   "kind":"namevalue",  "type":"choices=Dams.Name"}
+      ]
+   }
+}
