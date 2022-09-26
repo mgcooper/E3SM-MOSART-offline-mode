@@ -1,6 +1,5 @@
 function h = mos_plotQlinks(links,slopes,varargin)
 %PLOTQLINKS Plots a map of links colored by discharge D
-%   Detailed explanation goes here
 
 if nargin>2 && strcmp(varargin{1},'log')
    lflag   = true;
@@ -8,16 +7,16 @@ if nargin>2 && strcmp(varargin{1},'log')
    minD    = min(D(:));
    maxD    = max(D(:));
    cmap    = parula(numel(D));
-   Dspec   = makesymbolspec('Line',{'logD',[minD maxD],'Color',cmap,...
-      'LineWidth',3});
+   Dspec   = makesymbolspec(  'Line',{'logD',[minD maxD],'Color',cmap,...
+                              'LineWidth',3});
 else
    lflag   = false;
    D       = [links.D];
    minD    = min(D(:));
    maxD    = max(D(:));
    cmap    = parula(numel(D));
-   Dspec   = makesymbolspec('Line',{'D',[minD maxD],'Color',cmap,  ...
-      'LineWidth',3});
+   Dspec   = makesymbolspec(  'Line',{'D',[minD maxD],'Color',cmap,  ...
+                              'LineWidth',3});
 end
 
 % make the figure
@@ -35,10 +34,10 @@ if ~isfield(slopes,'X') && isfield(slopes,'X_hs')
 end
 
 % SYMBOLSPEC FOR THE SLOPES
-slopespec   = makesymbolspec('Polygon',{'Default',              ...
-   'FaceColor',rgb('forest green'),    ...
-   'FaceAlpha',0.15,                   ...
-   'EdgeColor','k'} );
+slopespec   = makesymbolspec( 'Polygon',{'Default',               ...
+                              'FaceColor',rgb('forest green'),    ...
+                              'FaceAlpha',0.15,                   ...
+                              'EdgeColor','k'} );
 % PLOT THE SLOPES
 mapshow(slopes,'SymbolSpec',slopespec); hold on;
 
