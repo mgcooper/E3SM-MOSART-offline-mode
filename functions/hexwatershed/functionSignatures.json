@@ -18,5 +18,16 @@
          {"name":"savefile",     "kind":"namevalue",  "type":["logical","scalar"],"purpose":"Option"},
          {"name":"filename",     "kind":"namevalue",  "type":["char"]}
       ]
+   },
+   "patch_hexmesh":
+   {
+      "inputs":
+      [
+         {"name":"Mesh",      "kind":"required",   "type":["struct"]},
+         {"name":"FaceColor", "kind":"namevalue",  "type":[["char"],["numeric"]]},
+         {"name":"Zdata",     "kind":"namevalue",  "type":["numeric"]},
+         {"name":"Cdata",     "kind":"namevalue",  "type":["numeric"]},
+         {"name":"FaceMapping","kind":"namevalue", "type":["char","choices=fieldnames(Mesh)"]}
+      ]
    }
 }
