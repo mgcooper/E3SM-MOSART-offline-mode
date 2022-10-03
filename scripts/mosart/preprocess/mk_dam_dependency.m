@@ -1,18 +1,21 @@
-
-clean
+clearvars
+close all
+clc
 
 % set the pyhexwatershed output version
 hexvers  = 'pyhexwatershed20220901014';
 
+% workon E3SM-MOSART-offline-mode
 
 % set the search radius (meters)
 rxy      = 10000;
 
-% tian - this just adds the path to the data/ folder
-% % set output save path and add paths to inputs
-% pathsave = setpath('icom/dams/','data');
-% setpath(['icom/hexwatershed/' hexvers],'data'); 
-% setpath('icom/dams/','data');
+% set output save path
+pathsave = setpath('icom/dams/','data');
+
+% add paths to inputs
+setpath(['icom/hexwatershed/' hexvers],'data');
+setpath('icom/dams/','data');
 
 % load the mesh, flowline, and dams data
 load('mpas_mesh.mat','Mesh');

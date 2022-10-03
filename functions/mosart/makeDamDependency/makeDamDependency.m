@@ -43,9 +43,6 @@ rxy      = p.Results.searchradius;
    
 %------------------------------------------------------------------------------
 
-% NOTE: lat/lon/x/yline and cap are not used but keep them if we want to use
-% the flowline rather than the mesh cells that contain the flowline. 
-
 % if a single dam was requested, subset Dams
 if damname ~= "all"
    Dams = Dams(Dams.Name == damname,:);
@@ -59,16 +56,19 @@ latmesh  = [Mesh.dLatitude_center_degree];   latmesh = latmesh(:);
 lonmesh  = [Mesh.dLongitude_center_degree];  lonmesh = lonmesh(:);
 zmesh    = [Mesh.Elevation];                 zmesh = zmesh(:);
 
-% get the x,y location of the flowlines. imesh is the indices of the hex cells
-% that contain a flowline indici
-latline     = [];
-lonline     = [];
-imeshline   = [];
-for n = 1:numel(Line)
-   latline     = [latline;nan;Line(n).Lat];
-   lonline     = [lonline;nan;Line(n).Lon];
-   imeshline   = [imeshline;Line(n).iMesh];
-end
+% NOTE: these are not used but keep them if we want to use the flowline rather
+% than the mesh cells that contain the flowline.  
+
+% % get the x,y location of the flowlines. imesh is the indices of the hex cells
+% % that contain a flowline indici
+% latline     = [];
+% lonline     = [];
+% imeshline   = [];
+% for n = 1:numel(Line)
+%    latline     = [latline;nan;Line(n).Lat];
+%    lonline     = [lonline;nan;Line(n).Lon];
+%    imeshline   = [imeshline;Line(n).iMesh];
+% end
 
 % project to utm. i used this to find the zone: utmzone(clat(1),clon(1))
 proj           = projcrs(32618,'Authority','EPSG');
@@ -109,6 +109,8 @@ zmeshline   = zmesh(imeshline);   % mesh-flowline elevation
 % this will hold the dependent indices for each dam:
 idepends = cell(numdams,1);
 
+% Set up a figure before running the algorithm
+%---------------------------------------------
 % plot the hex centroids, the dams, and the starting points. durign the
 % loop the dependent cells can be plotted on top of this map
 if plotfig == true
@@ -128,6 +130,8 @@ if plotfig == true
    %    scatter(mx(idx),my(idx),100,'g','filled');
 end
 
+% run the algorithm
+%---------------------------------------------
 % for each dam, start at the nearest cell and find all cells with lower
 % elevation, then find all cells within rXY distance from each cell
 for n = 1:numdams
