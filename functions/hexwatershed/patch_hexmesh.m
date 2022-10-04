@@ -79,7 +79,6 @@ if facemapping == false
       patch('XData',Mesh(n).Lon,'YData',Mesh(n).Lat,'FaceColor',FaceColor(n,:));
    end
    axis image
-   hold off;
 
 % otherwise, use fill   
 else
@@ -91,7 +90,6 @@ else
       fill(Mesh(idx(n)).Lon,Mesh(idx(n)).Lat,CData(n));
    end
    axis image
-   hold off;
    colorbar;
    
 end
