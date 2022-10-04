@@ -63,7 +63,7 @@ end
 
 % suggest keeping plotfig false and then using the plotting stuff below to see
 % the result
-Dams = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy,'plotfig',false);
+Dams = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy,'plotfig',true);
 
 
 if savedata == true
@@ -78,21 +78,11 @@ idam     = 1;
 idepends = Dams.DependentCells{idam};
 
 figure('Position', [50 60 1200 1200]); hold on; 
-% patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
-
-for n = 1:numel(Mesh)
-   patch('XData',Mesh(n).Lon,'YData',Mesh(n).Lat,'FaceColor','none');
-end
-
-for n = 1:numel(idepends)
-   iface = idepends(n);
-   patch('XData',Mesh(iface).Lon,'YData',Mesh(iface).Lat,'FaceColor','g');
-end
-
-geoshow(Line); scatter(Dams.Lon,Dams.Lat,'filled');
+patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
+patch_hexmesh(Mesh(idepends),'FaceColor','g'); 
+patch_hexmesh(Mesh([Mesh.iflowline]),'FaceColor','b'); 
+scatter(Dams.Lon,Dams.Lat,'m','filled'); % geoshow(Line); 
 scatter(Dams.Lon(idam),Dams.Lat(idam),100,'r','filled');
-
-
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 

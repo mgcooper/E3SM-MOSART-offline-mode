@@ -1,4 +1,4 @@
-function Dams = makeDamDependency(Dams,Mesh,Line,varargin)
+function [Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,varargin)
 %makeDamDependency adds an array of logical indices called 'DependentCells' to
 %input table Dams. The DependentCells for each dam are true for mesh cells in Mesh that
 %'depend' on each dam in Dams.
@@ -63,18 +63,22 @@ zmesh    = [Mesh.Elevation];                 zmesh = zmesh(:);
 % % that contain a flowline indici
 % latline     = [];
 % lonline     = [];
-% imeshline   = [];
 % for n = 1:numel(Line)
 %    latline     = [latline;nan;Line(n).Lat];
 %    lonline     = [lonline;nan;Line(n).Lon];
 %    imeshline   = [imeshline;Line(n).iMesh];
 % end
 
+imeshline   = [];
+for n = 1:numel(Line)
+   imeshline   = [imeshline;Line(n).iMesh];
+end
+
 % project to utm. i used this to find the zone: utmzone(clat(1),clon(1))
 proj           = projcrs(32618,'Authority','EPSG');
 [xmesh,ymesh]  = projfwd(proj,latmesh,lonmesh);          % mesh
-[xline,yline]  = projfwd(proj,latline,lonline);          % flowline
 [xdams,ydams]  = projfwd(proj,Dams.Lat,Dams.Lon);        % dams
+% [xline,yline]  = projfwd(proj,latline,lonline);          % flowline
 
 % create a boundary around the mesh and exclude dams outside the boundary
 ibounds     = boundary(xmesh,ymesh);
@@ -96,6 +100,11 @@ Dams = Dams(inbounds,:);
 MeshTree    = createns([xmesh ymesh]);
 
 % find the hex cell nearest each dam that contains a flowline
+[Mesh.iflowline] = deal(false);
+for n = 1:numel(imeshline)
+   Mesh(imeshline(n)).iflowline = true;
+end
+
 MeshLine    = Mesh(imeshline);
 
 % i think it is safe to overwrite cx/cy here 
@@ -121,7 +130,7 @@ if plotfig == true
    patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
    patch_hexmesh(Mesh(imeshline),'FaceColor','g');
    patch_hexmesh(MeshLine(imeshdams),'FaceColor','m'); hold on;
-   geoshow(Line); scatter(Dams.Lon(inbounds),Dams.Lat(inbounds),'b','filled');
+   geoshow(Line); scatter(Dams.Lon,Dams.Lat,'b','filled');
    
    % use the cartesian coords:
    %    macfig; scatter(mx,my,'filled'); hold on;
@@ -181,13 +190,20 @@ for n = 1:numdams
          
          icell = inearby{m};
          patch_hexmesh(Mesh(icell),'FaceColor','g');
-         pause(.001); 
+         
+         % activate this to see it update
+         % pause(.001); 
          
          % if using cartesian coords
          % xnearby = xylower(icell,1);
          % ynearby = xylower(icell,2);
          % scatter(xnearby,ynearby,50,'g','filled');
       end
+      
+      % replot the dam we are showing in yellow and the flowline
+      scatter_hexmesh(MeshLine(imeshdams(n)),'FaceColor','y','MarkerSize',100);
+      geoshow(Line); scatter(Dams.Lon,Dams.Lat,'b','filled');
+   
    end
    
 end
