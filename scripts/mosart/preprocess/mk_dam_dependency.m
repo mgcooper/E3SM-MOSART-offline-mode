@@ -63,26 +63,30 @@ end
 
 % suggest keeping plotfig false and then using the plotting stuff below to see
 % the result
-Dams = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy,'plotfig',true);
+[Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy);
 
 
 if savedata == true
    save([pathsave 'Dams_with_Dependency.mat'],'Dams');
 end
 
-% plot the result
+%% plot the result
 %-------------------------
 
 % choose a dam, and color the faces of the dependent mesh cells
-idam     = 1;
-idepends = Dams.DependentCells{idam};
-
 figure('Position', [50 60 1200 1200]); hold on; 
-patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
-patch_hexmesh(Mesh(idepends),'FaceColor','g'); 
-patch_hexmesh(Mesh([Mesh.iflowline]),'FaceColor','b'); 
-scatter(Dams.Lon,Dams.Lat,'m','filled'); % geoshow(Line); 
-scatter(Dams.Lon(idam),Dams.Lat(idam),100,'r','filled');
+for n = 1:height(Dams)
+   idam     = n
+   idepends = Dams.DependentCells{idam};
+
+   
+   patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
+   patch_hexmesh(Mesh(idepends),'FaceColor','g'); 
+   patch_hexmesh(Mesh([Mesh.iflowline]),'FaceColor','b'); 
+   scatter(Dams.Lon,Dams.Lat,'m','filled'); % geoshow(Line); 
+   scatter(Dams.Lon(idam),Dams.Lat(idam),100,'r','filled');
+   pause; clf
+end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
