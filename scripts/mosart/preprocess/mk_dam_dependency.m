@@ -22,6 +22,16 @@ load('mpas_mesh.mat','Mesh');
 load('mpas_flowline.mat','Line');
 load('icom_dams.mat','Dams');
 
+
+% find mesh cell flow direction
+%----------------------------------------------------
+[global_ID, global_dnID] = hexmesh_dnID(Mesh);
+
+for n = 1:numel(Mesh)
+   Mesh(n).global_ID = global_ID(n);
+   Mesh(n).global_dnID = global_dnID(n);
+end
+
 % find which mesh cells contain each flowline segment
 %----------------------------------------------------
 
@@ -46,7 +56,7 @@ for n = 1:numel(Line)
    
    idx = nan(1,numel(lat));
    for m = 1:numel(lat)
-      scatter(lon(m),lat(m),'b','filled');
+      % scatter(lon(m),lat(m),'b','filled');
       idx(m) = dsearchn([lonmesh latmesh],[lon(m) lat(m)]);
    end
    Line(n).iMesh = idx(:);

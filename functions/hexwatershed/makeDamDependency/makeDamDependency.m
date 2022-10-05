@@ -90,7 +90,8 @@ cap         = cap(inbounds);
 numdams     = sum(inbounds);
 
 % subset the Dams table
-Dams = Dams(inbounds,:);
+Dams     = Dams(inbounds,:);
+numdams  = size(Dams,1);
 
 % keep this to find all hex cells that contain a flowline using the Mesh
 % attribute iSegment, which should work with updated hexwatershed output
@@ -105,15 +106,28 @@ for n = 1:numel(imeshline)
    Mesh(imeshline(n)).iflowline = true;
 end
 
+% subset the mesh cells that contain a flowline
 MeshLine    = Mesh(imeshline);
-
-% i think it is safe to overwrite cx/cy here 
-xmeshline   = xmesh(imeshline);      % mesh-flowline x
-ymeshline   = ymesh(imeshline);      % mesh-flowline y
-zmeshline   = zmesh(imeshline);   % mesh-flowline elevation
+xmeshline   = xmesh(imeshline);     % mesh-flowline x
+ymeshline   = ymesh(imeshline);     % mesh-flowline y
+zmeshline   = zmesh(imeshline);     % mesh-flowline elevation
 
 % imeshdams are the indices of the mesh cells nearest each dam
-[imeshdams,~]  = dsearchn([xmeshline ymeshline],[xdams ydams]);
+% [imeshdams,~]  = dsearchn([xmeshline ymeshline],[xdams ydams]);
+[imeshdams,~]  = dsearchn([xmesh ymesh],[xdams ydams]);
+
+% for each dam, find all downstream cells to the outlet
+[dnidx,dnID] = findDownstreamCells(Mesh,imeshdams);
+
+% add the downstream cells to the Dams table
+for n = 1:numdams
+   Dams.i_DownstreamCells{n} = dnidx{n};
+   Dams.ID_DownstreamCells{n} = dnID{n};
+end
+
+% figure('Position', [50 60 1200 1200]); hold on; 
+% patch_hexmesh(Mesh); geoshow(Line); scatter(Dams.Lon,Dams.Lat,'k','filled');
+patch_hexmesh(MeshLine(ismember(dam_dnIDs,ID)),'FaceColor','m');
 
 % this will hold the dependent indices for each dam:
 idepends = cell(numdams,1);
@@ -138,6 +152,7 @@ if plotfig == true
    %    plot(fx,fy,'m');
    %    scatter(mx(idx),my(idx),100,'g','filled');
 end
+
 
 % run the algorithm
 %---------------------------------------------
