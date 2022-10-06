@@ -29,7 +29,8 @@ numpoints = numel(points);
 % pull out the global ID and dnID and locate the outlet
 ID       = [Mesh.global_ID];
 dnID     = [Mesh.global_dnID];
-ioutlet  = find(dnID==-1);
+% ioutlet  = find(dnID==-1);
+ioutlet = find([Mesh.global_dnID]==-9999);
 
 % init the outputs
 dnIDs = cell(numpoints,1);
