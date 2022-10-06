@@ -22,4 +22,3 @@ for n = 1:numel(Mesh)
    
    scatter(lon,lat,MarkerSize,FaceColor,'filled');
 end
-hold off;
