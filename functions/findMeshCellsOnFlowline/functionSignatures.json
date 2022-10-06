@@ -1,0 +1,12 @@
+{
+   "_schemaVersion": "1.0.0",
+   "_comment": "this is an example of a comment",
+   "findMeshCellsOnFlowline":
+   {
+      "inputs":
+      [
+         {"name":"Mesh",   "kind":"required",   "type":["struct"]},
+         {"name":"Line",   "kind":"required",   "type":["struct"]}
+      ]
+   }
+}
