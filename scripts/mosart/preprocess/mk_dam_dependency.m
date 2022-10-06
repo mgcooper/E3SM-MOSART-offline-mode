@@ -10,9 +10,6 @@ hexvers  = 'pyhexwatershed20220901014';
 % set the search radius (meters)
 rxy = 10000;
 
-% set output save path
-pathsave = setpath('icom/dams/','data');
-
 % add paths to inputs
 setpath(['icom/hexwatershed/' hexvers],'data');
 setpath('icom/dams/','data');
@@ -20,11 +17,7 @@ setpath('icom/dams/','data');
 % load the mesh, flowline, and dams data
 load('mpas_mesh.mat','Mesh');
 load('mpas_flowline.mat','Line');
-% load('icom_dams.mat','Dams');
-
-Dams = shaperead('susq_dams.shp','UseGeoCoords',true);
-Dams = struct2table(Dams);
-
+load('susq_dams.mat','Dams');
 
 % find mesh cell flow direction
 %----------------------------------------------------
@@ -45,7 +38,7 @@ Line = findMeshCellsOnFlowline(Mesh,Line);
 
 
 if savedata == true
-   save([pathsave 'Dams_with_Dependency.mat'],'Dams');
+   save('Dams_with_Dependency.mat','Dams');
 end
 
 %% plot the result
@@ -72,8 +65,6 @@ end
 % 1. for each dam, find the shortest path to the flowline
 % 2. starting at that cell, find all flowline cells downstream 
 % 3. run kd tree
-% remove dams outside the mesh domain
-
 
 % this is how I figured out that Mesh.iSegment doesn't matches Line.iStreamSegment
 % macfig; 
