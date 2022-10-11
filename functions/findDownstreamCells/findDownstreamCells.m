@@ -1,9 +1,9 @@
-function [dnidx,dnIDs] = findDownstreamCells(Mesh,points)
+function [i_downstream,ID_downstream] = findDownstreamCells(ID,dnID,points)
 %FINDDOWNSTREAMCELLS finds all Mesh cells downstream of each point in points
 % 
 % Syntax:
 % 
-%  [dnidx,dnID] = findDownstreamCells(Mesh,points);
+%  [i_downstream,ID_downstream] = findDownstreamCells(ID,dnID,points);
 % 
 % Author: Matt Cooper, 05-Oct-2022, https://github.com/mgcooper
 
@@ -13,10 +13,11 @@ function [dnidx,dnIDs] = findDownstreamCells(Mesh,points)
    p                 = inputParser;
    p.FunctionName    = 'findDownstreamCells';
    
-   addRequired(p,    'Mesh',                 @(x)isstruct(x));
-   addRequired(p,    'points',               @(x)islogical(x) | isnumeric(x));
+   addRequired(p,    'ID',     @(x)isnumeric(x));
+   addRequired(p,    'dnID',   @(x)isnumeric(x));
+   addRequired(p,    'points', @(x)islogical(x) | isnumeric(x));
    
-   parse(p,Mesh,points);
+   parse(p,ID,dnID,points);
    
 %------------------------------------------------------------------------------
 
@@ -26,15 +27,13 @@ if islogical(points)
 end
 numpoints = numel(points);
 
-% pull out the global ID and dnID and locate the outlet
-ID       = [Mesh.global_ID];
-dnID     = [Mesh.global_dnID];
+% locate the outlet cell from the global dn_ID
 % ioutlet  = find(dnID==-1);
-ioutlet = find([Mesh.global_dnID]==-9999);
+ioutlet = find(dnID==-9999);
 
 % init the outputs
-dnIDs = cell(numpoints,1);
-dnidx = cell(numpoints,1);
+ID_downstream = cell(numpoints,1);
+i_downstream = cell(numpoints,1);
 
 % loop over all points and find all downstream cells
 for n = 1:numpoints
@@ -46,6 +45,6 @@ for n = 1:numpoints
       dnID_n   = [dnID_n; dnID(idn)];  %#ok<AGROW>
       dnidx_n  = [dnidx_n; idn];       %#ok<AGROW>
    end
-   dnIDs{n} = dnID_n;
-   dnidx{n} = dnidx_n;
+   ID_downstream{n} = dnID_n;
+   i_downstream{n} = dnidx_n;
 end
