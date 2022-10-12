@@ -28,31 +28,33 @@ p                 = inputParser;
 p.FunctionName    = 'makeDamDependency';
 p.StructExpand    = false;
    
-addRequired(p,    'Dams',                 @(x)istable(x)            );
-addRequired(p,    'Mesh',                 @(x)isstruct(x)           );
-addRequired(p,    'Line',                 @(x)isstruct(x)           );
-addParameter(p,   'searchradius', 10000,  @(x)isnumeric(x)          );
-addParameter(p,   'plotfig',      false,  @(x)islogical(x)          );
-addParameter(p,   'damname',      'all',  @(x)ischar(x)|isstring(x) );
+addRequired(p,    'Dams',                    @(x)istable(x)            );
+addRequired(p,    'Mesh',                    @(x)isstruct(x)           );
+addRequired(p,    'Line',                    @(x)isstruct(x)           );
+addParameter(p,   'searchradius', 10000,     @(x)isnumeric(x)          );
+addParameter(p,   'plotfig',      false,     @(x)islogical(x)          );
+addParameter(p,   'damname',      'all',     @(x)ischar(x)|isstring(x) );
+addParameter(p,   'IDtype',       'local',   @(x)ischar(x)|isstring(x) );
 
 parse(p,Dams,Mesh,Line,varargin{:});
    
+rxy      = p.Results.searchradius;
 plotfig  = p.Results.plotfig;
 damname  = p.Results.damname;
-rxy      = p.Results.searchradius;
+IDtype   = p.Results.IDtype;
    
 %------------------------------------------------------------------------------
 
 % this determines whether we start the search for dependent cells at the grid
 % cell that contains each dam (useflowline=false), or the grid cell nearest
 % each dam that contains a flowline (useflowline=true). 
-useflowline = true; 
+useflowline = false; 
 
 % if a single dam was requested, subset Dams
 if damname ~= "all"
    Dams = Dams(Dams.Name == damname,:);
 end
-numdams  = size(Dams,1);
+numdams = size(Dams,1);
 
 % get the x,y location of all the mesh cell centroids
 latmesh  = transpose([Mesh.dLatitude_center_degree]);
@@ -69,7 +71,7 @@ proj           = projcrs(32618,'Authority','EPSG');
 % unique([Mesh.iSegment])
 
 % build the kdtree for the mesh
-MeshTree    = createns([xmesh ymesh]);
+MeshTree = createns([xmesh ymesh]);
 
 % get the mesh cells that contain a flowline and add that info to the Mesh 
 imeshline = vertcat(Line(:).iMesh);
@@ -78,36 +80,47 @@ for n = 1:numel(imeshline)
    Mesh(imeshline(n)).iflowline = true;
 end
 
-% % subset the mesh cells that contain a flowline
-MeshLine    = Mesh(imeshline);
-xmeshline   = xmesh(imeshline);     % mesh-flowline x
-ymeshline   = ymesh(imeshline);     % mesh-flowline y
-
-
-% find the elevation of the cell that contains the dam
-[imeshdams,~]  = dsearchn([xmesh ymesh],[xdams ydams]);
-zdams = zmesh(imeshdams);
+% subset the mesh cells that contain a flowline
+MeshLine = Mesh(imeshline);
    
 % imeshdams are the indices of the mesh cells nearest each dam
 if useflowline == true
+   
    % find the nearest cell to each dam that contains a flowline:
-   [iflowlinedams,~]  = dsearchn([xmeshline ymeshline],[xdams ydams]);
+   [iflowlinedams,~] = dsearchn([xmesh(imeshline) ymesh(imeshline)],[xdams ydams]);
 
    % transform iflowlinedams to the global mesh indices:
-   imeshdams = transpose([MeshLine(iflowlinedams).global_ID]);
+   imeshdams = transpose([MeshLine(iflowlinedams).cell_ID]);
    
 else
    % find the nearest cell to each dam whether it contains a flowline or not:
-   [imeshdams,~]  = dsearchn([xmesh ymesh],[xdams ydams]);
+   [imeshdams,~] = dsearchn([xmesh ymesh],[xdams ydams]);
 end
 
-% for each dam, find all downstream cells to the outlet
-[dnidx,dnID] = findDownstreamCells(Mesh,imeshdams);
+% find the elevation of the cell that contains the dam
+zdams = zmesh(imeshdams);
 
-% add the downstream cells to the Dams table
+% for each dam, find all downstream cells to the outlet
+switch IDtype
+   case 'local'
+      ID = [Mesh.cell_ID];
+      dnID = [Mesh.cell_dnID];
+   case 'global'
+      ID = [Mesh.cell_ID];
+      dnID = [Mesh.cell_dnID];
+      % don't use these here, instead transform at the end
+      % ID = [Mesh.lCellID];
+      % dnID = [Mesh.lCellID_downslope];
+end
+
+[i_downstream,id_downstream] = findDownstreamCells(ID,dnID,imeshdams,'mosart');
+
+% add the downstream cells to the Dams table. for IDtype 'local',
+% i_DownstreamCells(2:end-1) = ID_DownstreamCells are identical except for the outlet
+% cell
 for n = 1:numdams
-   Dams.i_DownstreamCells{n} = dnidx{n};
-   Dams.ID_DownstreamCells{n} = dnID{n};
+   Dams.i_DownstreamCells{n} = i_downstream{n};
+   Dams.ID_DownstreamCells{n} = id_downstream{n};
 end
 
 % this will hold the dependent indices for each dam:
@@ -153,6 +166,9 @@ for n = 1:numdams
    % each cell has the mesh indices within rxy distance of the xyquery vertex.
    inearby = rangesearch(MeshTree,xyquery,rxy);
    
+   %sprintf('%.2f %.2f',xyquery(end,1),xyquery(end,2))
+   %406158.04907704145, 4380451.961597792
+   
    % concatenate into one list, then remove cells that are above the dam
    inearby = horzcat(inearby{:});
    inearby = unique(inearby(zmesh(inearby) < elev));
@@ -171,9 +187,31 @@ end
 
 % add the dependency to the Dams table
 for n = 1:numdams
-   Dams.DependentCells{n} = idepends{n};
+   Dams.ID_DependentCells{n} = transpose(idepends{n});
 end
 
+% rather than request 'local' vs 'global' ID at the beginning, transform the
+% dependent cells here (b/c various parts of the algorithm rely on the local ID
+% implicitly via indexing into the vectors i.e. from 1:numcells. but i left the
+% option in place for now b/c it might be helpful later to have all quantities
+% independent of the 1:numcells indexing)
+if IDtype == "global"
+   globalID = [Mesh.lCellID];
+   for n = 1:numel(idepends)
+      id_n = idepends{n};
+      id_n(id_n==-9999) = -1;
+      Dams.globalID_DependentCells{n} = transpose(globalID(id_n));
+   end
+end
+
+% % this shows that the mapping to globalID works:
+% figure; 
+% for n = 1:numel(Mesh)
+%    dependentcells = Dams.DependentCells{n};
+%    idependent = ismember(globalID,dependentcells);
+%    patch_hexmesh(Mesh(idependent));
+%    pause;
+% end
 
 % % this confirms that the dLongitude_center/dLatitude_center is the
 % centroid of each hexagon

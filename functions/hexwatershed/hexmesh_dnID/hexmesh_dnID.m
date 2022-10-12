@@ -20,19 +20,19 @@ parse(p,Mesh);
    
 %------------------------------------------------------------------------------
 
-globalID    = [Mesh(:).lCellID]';
-globaldnID  = [Mesh(:).lCellID_downslope]';
+cell_ID    = [Mesh(:).lCellID]';
+cell_dnID  = [Mesh(:).lCellID_downslope]';
 
 % Convert ID
-N  = numel(globalID);
+N  = numel(cell_ID);
 ID = (1:N)';
 dnID = nan(N,1);
 
 for n = 1:N
-   if globaldnID(n) == -9999
+   if cell_dnID(n) == -9999
       dnID(n) = -9999;
    else
-      idx = find(globalID == globaldnID(n));
+      idx = find(cell_ID == cell_dnID(n));
       if isempty(idx)
          dnID(n) = -9999;
       else

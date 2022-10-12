@@ -2,8 +2,14 @@ clearvars
 close all
 clc
 
+% TODO:
+% 1 - add globalID_DependentCells (done)
+% 2 - put globalID_DependentCells into a uniform table (done)
+% 3 - repeat for MPAS domain mesh (~18,000 cells) if that can be found
+
 % set the pyhexwatershed output version
-hexvers  = 'pyhexwatershed20220901014';
+% hexvers  = 'pyhexwatershed20220901014';
+hexvers  = 'mpas_c220107';
 
 % workon E3SM-MOSART-offline-mode
 
@@ -19,26 +25,39 @@ load('mpas_mesh.mat','Mesh');
 load('mpas_flowline.mat','Line');
 load('susq_dams.mat','Dams');
 
-% find mesh cell flow direction
+% find mesh cell flow direction. this is used to find all cells downstream of
+% each dam
 %----------------------------------------------------
-[global_ID, global_dnID] = hexmesh_dnID(Mesh);
+[cell_ID, cell_dnID] = hexmesh_dnID(Mesh);
 
 for n = 1:numel(Mesh)
-   Mesh(n).global_ID = global_ID(n);
-   Mesh(n).global_dnID = global_dnID(n);
+   Mesh(n).cell_ID = cell_ID(n);
+   Mesh(n).cell_dnID = cell_dnID(n);
 end
 
-% find which mesh cells contribute to each flowline segment
+% find which mesh cells contribute to each flowline segment. the 'iMesh' field
+% produced by this function is used to find the mesh cells that contain a
+% flowline for plotting but this isn't necessary for the algorithm
 %----------------------------------------------------
 Line = findMeshCellsOnFlowline(Mesh,Line);
 
 % run the kdtree function
 %-------------------------
-[Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy);
+[Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy,'IDtype','global');
 
+% put the dependent cells into their own table
+numdams = height(Dams);
+maxcells = max(cellfun(@numel,Dams.ID_DependentCells));
+DependentCells = nan(numdams,maxcells);
+for n = 1:numdams
+   cells_n = Dams.globalID_DependentCells{n};
+   DependentCells(n,1:numel(cells_n)) = cells_n;
+end
 
+% save the data
 if savedata == true
    save('Dams_with_Dependency.mat','Dams');
+   save('DependentCellsArray.mat','DependentCells');
 end
 
 %% plot the result
@@ -62,6 +81,8 @@ end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
+% 18,559
+
 % 1. for each dam, find the shortest path to the flowline
 % 2. starting at that cell, find all flowline cells downstream 
 % 3. run kd tree
@@ -74,7 +95,7 @@ end
 %    pause; 
 % end
 
-% % this mpas mesh is very detailed, includes the bay
+% % this mpas mesh is very detailed, includes the bay (20276 cells)
 % pathroot = 'icom/hexwatershed/pyhexwatershed20211130002/pyflowline/';
 % pathdata = setpath(pathroot,'data');
 % 
