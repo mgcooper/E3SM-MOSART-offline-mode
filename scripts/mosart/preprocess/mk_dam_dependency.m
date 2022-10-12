@@ -2,14 +2,8 @@ clearvars
 close all
 clc
 
-% TODO:
-% 1 - add globalID_DependentCells (done)
-% 2 - put globalID_DependentCells into a uniform table (done)
-% 3 - repeat for MPAS domain mesh (~18,000 cells) if that can be found
-
 % set the pyhexwatershed output version
-% hexvers  = 'pyhexwatershed20220901014';
-hexvers  = 'mpas_c220107';
+hexvers = 'pyhexwatershed20220901014';
 
 % workon E3SM-MOSART-offline-mode
 
@@ -56,8 +50,8 @@ end
 
 % save the data
 if savedata == true
-   save('Dams_with_Dependency.mat','Dams');
-   save('DependentCellsArray.mat','DependentCells');
+   save('data/matfiles/Dams_with_Dependency.mat','Dams');
+   save('data/matfiles/DependentCellsArray.mat','DependentCells');
 end
 
 %% plot the result
