@@ -87,8 +87,11 @@ end
 figure('Position', [50 60 1200 1200]); hold on; 
 for n = 1:height(Dams)
    idam     = n
-   IDdepends = Dams.ID_DependentCells{idam};
-   idepends = Dams.i_DependentCells{idam};
+%    IDdepends = Dams.ID_DependentCells{idam};
+%    idepends = Dams.i_DependentCells{idam};
+   
+   IDdepends = rmnan(DependentCells(idam,:));
+   idepends = find(ismember([Mesh.lCellID],IDdepends));
 
    
    patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
