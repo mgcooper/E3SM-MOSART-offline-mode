@@ -28,8 +28,8 @@ function Line = findMeshCellsOnFlowline(Mesh,Line)
 % add that index to the line attributes.
 
 % extract the mesh cell centroid coordinates
-lonmesh = transpose([Mesh.dLongitude_center_degree]);
-latmesh = transpose([Mesh.dLatitude_center_degree]);
+xmesh = transpose([Mesh.dLongitude_center_degree]);
+ymesh = transpose([Mesh.dLatitude_center_degree]);
 
 % make a figure to see the mesh if desired
 % figure('Position', [50 60 1200 1200]); hold on; 
@@ -43,11 +43,11 @@ for n = 1:numel(Line)
    idx = nan(1,numel(lat));
    for m = 1:numel(lat)
       % scatter(lon(m),lat(m),'b','filled');
-      idx(m) = dsearchn([lonmesh latmesh],[lon(m) lat(m)]);
+      idx(m) = dsearchn([xmesh ymesh],[lon(m) lat(m)]);
    end
    Line(n).iMesh = idx(:);
-   Line(n).Lat_Mesh = latmesh(idx);
-   Line(n).Lon_Mesh = lonmesh(idx);
+   Line(n).Lat_Mesh = ymesh(idx);
+   Line(n).Lon_Mesh = xmesh(idx);
    
    % this can be used to see the flowline vertices
    % geoshow(Line(n));
