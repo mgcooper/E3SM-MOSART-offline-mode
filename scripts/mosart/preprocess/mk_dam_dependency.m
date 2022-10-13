@@ -19,33 +19,59 @@ load('mpas_mesh.mat','Mesh');
 load('mpas_flowline.mat','Line');
 load('susq_dams.mat','Dams');
 
-% find mesh cell flow direction. this is used to find all cells downstream of
-% each dam
-%----------------------------------------------------
-[cell_ID, cell_dnID] = hexmesh_dnID(Mesh);
+% find mesh cell flow direction
+[ID,dnID] = hexmesh_dnID(Mesh);
+
+sum(ID==-9999)
+sum(ID==-1)
+sum(dnID==-9999)
 
 for n = 1:numel(Mesh)
-   Mesh(n).cell_ID = cell_ID(n);
-   Mesh(n).cell_dnID = cell_dnID(n);
+   Mesh(n).cell_ID = ID(n);
+   Mesh(n).cell_dnID = dnID(n);
 end
 
 % find which mesh cells contribute to each flowline segment. the 'iMesh' field
 % produced by this function is used to find the mesh cells that contain a
 % flowline for plotting but this isn't necessary for the algorithm
-%----------------------------------------------------
 Line = findMeshCellsOnFlowline(Mesh,Line);
+
+% get the x,y location of the dams and the mesh cell centroids
+londams = Dams.Lon;
+latdams = Dams.Lat;
+lonmesh = transpose([Mesh.dLongitude_center_degree]);
+latmesh = transpose([Mesh.dLatitude_center_degree]);
+zmesh = transpose([Mesh.Elevation]);
+
+% project to utm. i used this to find the zone: utmzone(ymesh(1),xmesh(1))
+projutm18T     = projcrs(32618,'Authority','EPSG');
+[xmesh,ymesh]  = projfwd(projutm18T,latmesh,lonmesh);
+[xdams,ydams]  = projfwd(projutm18T,latdams,londams);
+
+% get the mesh cells that contain a flowline and add that info to the Mesh 
+imeshline = vertcat(Line(:).iMesh);
+[Mesh.iflowline] = deal(false);
+for n = 1:numel(imeshline)
+   Mesh(imeshline(n)).iflowline = true;
+end
+% keep this to find all hex cells that contain a flowline using the Mesh
+% attribute iSegment, which should work with updated hexwatershed output
+% unique([Mesh.iSegment])
+
+% pass this to the function so it returns the DependentCell ID's in terms of
+% the global (hexwatershed) lCellID rather than the local 1:numcells ID.
+globalID = [Mesh.lCellID];
 
 % run the kdtree function
 %-------------------------
-[Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy,'IDtype','global');
+[DependentCells,i_DependentCells] =  makeDamDependency( ...
+                        ID,dnID,[xdams ydams],[xmesh ymesh zmesh], ...
+                        'searchradius',rxy,'userID',globalID);
 
-% put the dependent cells into their own table
-numdams = height(Dams);
-maxcells = max(cellfun(@numel,Dams.ID_DependentCells));
-DependentCells = nan(numdams,maxcells);
-for n = 1:numdams
-   cells_n = Dams.globalID_DependentCells{n};
-   DependentCells(n,1:numel(cells_n)) = cells_n;
+% add the dependent cells to the Dams tble
+for n = 1:numel(xdams)
+   Dams.ID_DependentCells{n} = DependentCells(n,~isnan(DependentCells(n,:)));
+   Dams.i_DependentCells{n} = i_DependentCells(n,~isnan(i_DependentCells(n,:)));
 end
 
 % save the data
@@ -61,7 +87,8 @@ end
 figure('Position', [50 60 1200 1200]); hold on; 
 for n = 1:height(Dams)
    idam     = n
-   idepends = Dams.DependentCells{idam};
+   IDdepends = Dams.ID_DependentCells{idam};
+   idepends = Dams.i_DependentCells{idam};
 
    
    patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
