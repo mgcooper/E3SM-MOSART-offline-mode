@@ -1,10 +1,22 @@
 function [schema,info,data] = mosartMakeDomainFile(slopes,ftemplate,fsave,opts)
+% MOSARTMAKEDOMAINFILE build domain file for MOSART 
+% 
+%  Inputs
+% 
+%     'slopes' : a structure with the following fields:
+% 
+%     longxy   : latitude of computational unit, scalar
+%     latixy   : longitude of computational unit, scalar
+%     area     : area in m2
+% 
+%  Outputs
+% 
+%     'schema' : netcdf schema for the domain file
+%     'info'   : ncinfo struct for the domain file
+%     'data'   : ncread output, the data written to the file
+% 
+% See also 
 
-% Inputs: 
-%   'slopes' a structure with the following fields:
-%       longxy  = latitude of computational unit, scalar
-%       latixy  = longitude of computational unit, scalar
-%       area    = area in m2
 
 % these are the variables created by this function:
    %vars    = {'xc','yc','xv','yv','mask','area','frac'};

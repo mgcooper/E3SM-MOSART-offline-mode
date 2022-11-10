@@ -1,32 +1,25 @@
 clean
 
 % see other mk_sag_ files for updated paths
-%==========================================================================
+
 %% set paths
-%==========================================================================
 path.data   = '/Users/coop558/mydata/e3sm/sag/unstructured/icom_template/';
 path.sag    = setpath('interface/data/hillsloper/');
 path.out    = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/';
 path.in     = path.data;
 
-%==========================================================================
 %% 1. Load the hillsloper data and modify it for MOSART 
-%==========================================================================
 load([path.sag 'sag_hillslopes']); slopes = newslopes; clear newslopes;
 sagvarnames     = fieldnames(slopes);
 i               = isnan([slopes.dnID]);
 slopes(i).dnID  = -9999;                    % replace nan with -9999
 
-%==========================================================================
 %% read in icom files to use as a template
-%==========================================================================
 % see sftp://compy.pnl.gov/compyfs/inputdata/rof/mosart/
 fland   = [path.data 'surfdata_u_icom_half_sparse_grid_c200615.nc'];
 fout    = [path.out 'surfdata_sag_test_basin.nc'];
 
-%==========================================================================
 %% 1. mosart file (frivinp_rtm)
-%==========================================================================
 info    = ncparse(fland);
 vars    = [info.Name];
 nvars   = length(vars);
@@ -83,16 +76,11 @@ legend('domain file area','surf file area')
 
 surftime = ncread(fin,'time');
 
-%==========================================================================
 %%
-%==========================================================================
-
 mosart_info = ncinfo(fout);
 mosart_parse = ncparse(fout);
 
-%==========================================================================
 %%
-%==========================================================================
 
 % fmosart and fparams are both frivinp files, but fmosart is the one that
 % is used in the unstructured test runs. the fland file is not specified in
@@ -168,9 +156,7 @@ mosart_parse = ncparse(fout);
 % unit = {    'm^2','m^2','m^2','na','na','m^-1','na','na','na','na',     ...
 %             'na','m','m','na','m','m','na','m'};
 
-%==========================================================================
 %%
-%==========================================================================
 
 % for i = 3:nvars     % start on 3 because 1/2 are lat/lon
 %     isag = find(ismember(sagvarnames,vars(i)));

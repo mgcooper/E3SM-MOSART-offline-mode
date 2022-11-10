@@ -6,7 +6,6 @@ clean
 % have just copied the idea over to the runoff file to see if it would work
 
 %% set paths
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 p.data  = setpath('interface/data/hillsloper/');
 p.temp  = '/Users/coop558/mydata/e3sm/input/icom/';
 p.forc  = '/Users/coop558/mydata/e3sm/forcing/lnd/dlnd7/hcru_hcru/';
@@ -22,7 +21,6 @@ if exist(fsave,'file'); delete(fsave); end
 
 
 %% load the hillsloper data that has ID and dnID
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 load([p.data 'sag_hillslopes']); slopes = newslopes; clear newslopes;
 
 sagvars     = fieldnames(slopes);
@@ -36,14 +34,12 @@ lon         = wrapTo360(lon);
 ncells      = length(lon);
 
 %% read in GPCC runoff
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 info_mos    = ncinfo(fmosart);
 info        = ncinfo(frunoff);
 vars        = {info.Variables.Name};
 data        = ncreaddata(frunoff,vars);
 
 %% interpolate the GPCC runoff to the sag basins
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 R           = permute(data.QRUNOFF,[2,1,3]);
 [LON,LAT]   = meshgrid(data.lon,data.lat);
 LAT         = flipud(LAT);
@@ -70,7 +66,6 @@ ndays       = size(QRUNOFF,2);
 lon         = wrapTo180(lon);
 
 %% 4. write the file in the format of GPCC.daily
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 % QDRAI
 var                         = 'QDRAI';
@@ -141,7 +136,6 @@ ncwrite(fsave,var,lon);
 
 newinfo = ncinfo(fsave);
 
-%========================================================================
 %% this shows the discrepancy between scatteredInterpolant and interp2
 % interpolate the GPCC runoff to the sag basin lat/lon
 % Rq          = scatteredInterpolant(LONrs,LATrs,Ravgrs,'linear');

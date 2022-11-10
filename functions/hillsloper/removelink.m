@@ -1,7 +1,6 @@
-function newlinks = mos_removelink(newlinks,rm_link,us_link,ds_link,   ...
-                     rp_link,slope_flag)
-%REMOVE_LINK Removes a link from a flow network and updates the
-%attributes to maintain connectivity
+function newlinks = removelink(newlinks,rm_link,us_link,ds_link,rp_link,slope_flag)
+%REMOVELINK Remove link from flow network and update connectivity attributes 
+% 
 %   rm_link     = id(s) to be removed
 %   us_links    = id(s) of links that flow into rm_link's upstream node
 %   ds_links    = id(s) of links that merge with rm_link's downstream node
@@ -9,18 +8,20 @@ function newlinks = mos_removelink(newlinks,rm_link,us_link,ds_link,   ...
 %   ds_nodes    = rm_link's downstream node id
 %   rp_link     = id of link that replaces rm_link
 %   slope_flag  = remove the slope associated with rm_link
-
+% 
 % NOTE: if i want to first run these functions, then re-run the
 % make_newlinks function, then I might need to return edits to the
 % nodes shapefile that fix the connections between those fields and the
 % ones here
-
+% 
 % NOTE: the output of this function is such that the two us_links are
 % treated as a confluence with rp_link, whereas the one ds_link is
 % treated as a link that flows directly into rp_link. the fields are
 % consistent in this way, but the linkages between the fields in the
 % original 'nodes', 'links', and 'slopes' tables are broken (but could
 % be fixed, see detailed notes in archive)
+% 
+% Note: previously mos_removelink
 
 % get the indices of the link to be removed and its replacement
 idxrm       = ismember([newlinks.link_ID],rm_link);

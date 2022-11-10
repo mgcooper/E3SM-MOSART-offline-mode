@@ -1,8 +1,6 @@
 clean
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %%      set paths
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 % set paths
 path_domain_data           = '../data/hillsloper/';
@@ -14,9 +12,7 @@ path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
 % path.sag    = setpath('interface/data/hillsloper/sag_basin/');
 % cd(path.save)
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %%      Load the hillsloper data and modify it for MOSART 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 load([path_domain_data 'mosart_hillslopes']);
 slopes = mosart_hillslopes; clear mosart_hillslopes
@@ -46,9 +42,7 @@ for n = 1:length(slopes)
     yv(:,n)     = [ybox(1) ybox(1) ybox(2) ybox(2)];
 end
 
-%==========================================================================
 %% 2. read in icom files to use as a template, and write the new file
-%==========================================================================
 
 fdomain     = 'domain_u_icom_half_sparse_grid_c200610.nc';
 fdomain     = [path_domain_file_template fdomain];

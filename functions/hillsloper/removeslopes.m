@@ -1,6 +1,6 @@
 function newslopes = removeslopes(slopes,rm_slope,rp_slope,rp_flag)
 %REMOVE_SLOPES merge one hillslope with another
-
+% 
 % slopes    = structure (shapefile) containing hillslopes
 % rm_slope  = id of the slope to be removed
 % rp_slope  = id of the slope that replaces (merges with) rm_slope
