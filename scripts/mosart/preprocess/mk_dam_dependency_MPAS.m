@@ -102,6 +102,5 @@ for n = 1:1
    
    ilat = find(lat==dlat)
    ilon = find(lon==dlon)
-end   
-   
-   
+end
+

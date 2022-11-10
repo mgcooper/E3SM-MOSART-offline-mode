@@ -2,13 +2,15 @@ clearvars
 close all
 clc
 
+savedata = false;
+
 % set the pyhexwatershed output version
 hexvers = 'pyhexwatershed20220901014';
 
 % workon E3SM-MOSART-offline-mode
 
 % set the search radius (meters)
-rxy = 10000;
+rxy = 30000;
 
 % add paths to inputs
 setpath(['icom/hexwatershed/' hexvers],'data');
@@ -84,24 +86,45 @@ end
 %-------------------------
 
 % choose a dam, and color the faces of the dependent mesh cells
-figure('Position', [50 60 1200 1200]); hold on; 
-for n = 1:height(Dams)
-   idam     = n
-%    IDdepends = Dams.ID_DependentCells{idam};
-%    idepends = Dams.i_DependentCells{idam};
-   
-   IDdepends = rmnan(DependentCells(idam,:));
-   idepends = find(ismember([Mesh.lCellID],IDdepends));
+idam = 7;
+%IDdepends = Dams.ID_DependentCells{idam};
+%idepends = Dams.i_DependentCells{idam};
+IDdepends = rmnan(DependentCells(idam,:));
+idepends = ismember([Mesh.lCellID],IDdepends);
 
-   
-   patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
-   patch_hexmesh(Mesh(idepends),'FaceColor','g'); 
-%    patch_hexmesh(Mesh([Mesh.iflowline]),'FaceColor','b'); 
-   scatter(Dams.Lon,Dams.Lat,'m','filled'); % geoshow(Line); 
-   scatter(Dams.Lon(idam),Dams.Lat(idam),100,'r','filled');
-   geoshow(Line);
-   pause; clf
-end
+figure('Position', [50 60 1200 1200]); hold on; 
+patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
+patch_hexmesh(Mesh(idepends),'FaceColor','g'); 
+scatter(Dams.Lon,Dams.Lat,'m','filled'); % geoshow(Line); 
+scatter(Dams.Lon(idam),Dams.Lat(idam),100,'r','filled');
+geoshow(Line);
+
+% % plot all in a loop
+% figure('Position', [50 60 1200 1200]); hold on; 
+% for n = 1:height(Dams)
+%    idam     = n
+% %    IDdepends = Dams.ID_DependentCells{idam};
+% %    idepends = Dams.i_DependentCells{idam};
+%    
+%    IDdepends = rmnan(DependentCells(idam,:));
+%    idepends = find(ismember([Mesh.lCellID],IDdepends));
+%    
+%    patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
+%    patch_hexmesh(Mesh(idepends),'FaceColor','g'); 
+% %    patch_hexmesh(Mesh([Mesh.iflowline]),'FaceColor','b'); 
+%    scatter(Dams.Lon,Dams.Lat,'m','filled'); % geoshow(Line); 
+%    scatter(Dams.Lon(idam),Dams.Lat(idam),100,'r','filled');
+%    geoshow(Line);
+%    pause; clf
+% end
+
+% subset one set of dependent cells and write a shapefile
+% idam = 7;
+idam = find(Dams.Name == "ADAM T. BOWER MEMORIAL");
+IDdepends = rmnan(DependentCells(idam,:));
+idepends = find(ismember([Mesh.lCellID],IDdepends));
+tmp = Mesh(idepends);
+writeGeoShapefile(tmp,['data/shp/dependentCells' num2str(idam) '.shp'])
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 
