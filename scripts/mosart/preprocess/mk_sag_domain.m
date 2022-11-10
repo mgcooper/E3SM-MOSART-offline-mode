@@ -1,6 +1,6 @@
 clean
 
-%%      set paths
+%% set paths
 
 % set paths
 path_domain_data           = '../data/hillsloper/';
@@ -12,7 +12,7 @@ path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
 % path.sag    = setpath('interface/data/hillsloper/sag_basin/');
 % cd(path.save)
 
-%%      Load the hillsloper data and modify it for MOSART 
+%% Load the hillsloper data and modify it for MOSART 
 
 load([path_domain_data 'mosart_hillslopes']);
 slopes = mosart_hillslopes; clear mosart_hillslopes
