@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<file id="stream" version="1.0">
+<dataSource>
+   GENERIC
+</dataSource>
+<domainInfo>
+   <variableNames>
+      time     time
+      lon      lon
+      lat      lat
+   </variableNames>
+   <filePath>
+      /compyfs/inputdata/lnd/dlnd7/mingpan
+   </filePath>
+   <fileNames>
+      ming_daily_1979.nc
+   </fileNames>
+</domainInfo>
+<fieldInfo>
+   <variableNames>
+      QDRAI    rofsub
+      QOVER    rofsur
+   </variableNames>
+   <filePath>
+      /compyfs/inputdata/lnd/dlnd7/mingpan
+   </filePath>
+   <fileNames>
+      ming_daily_1979.nc
+      ming_daily_1980.nc
+      ming_daily_1981.nc
+      ming_daily_1982.nc
+      ming_daily_1983.nc
+      ming_daily_1984.nc
+      ming_daily_1985.nc
+      ming_daily_1986.nc
+      ming_daily_1987.nc
+      ming_daily_1988.nc
+      ming_daily_1989.nc
+      ming_daily_1990.nc
+      ming_daily_1991.nc
+      ming_daily_1992.nc
+      ming_daily_1993.nc
+      ming_daily_1994.nc
+      ming_daily_1995.nc
+      ming_daily_1996.nc
+      ming_daily_1997.nc
+      ming_daily_1998.nc
+      ming_daily_1999.nc
+      ming_daily_2000.nc
+      ming_daily_2001.nc
+      ming_daily_2002.nc
+      ming_daily_2003.nc
+      ming_daily_2004.nc
+      ming_daily_2005.nc
+      ming_daily_2006.nc
+      ming_daily_2007.nc
+      ming_daily_2008.nc
+   </fileNames>
+   <offset>
+      0
+   </offset>
+</fieldInfo>
+</file>
