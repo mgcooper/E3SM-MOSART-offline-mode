@@ -1,11 +1,23 @@
 clean
 
+site_name   = 'trib_basin';
+runID       = 'huc0802_gauge15906000_nopf';
+
 %% set paths
 
 % set paths
-path_domain_data           = '../data/hillsloper/';
-path_domain_file_template  = '../data/templates/icom/';
-path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
+path_domain_data           = getenv('USER_HILLSLOPER_DATA_PATH');
+path_domain_file_template  = getenv('USER_MOSART_TEMPLATE_PATH')
+path_mosart_file_save      = getenv('USER_E3SM_CONFIG_PATH');
+path_area_file             = getenv('USER_ATS_DATA_PATH');
+
+% 
+area_file = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
+area_file = [path_area_file filesep runID filesep area_file];
+
+% path_domain_data           = '../data/hillsloper/';
+% path_domain_file_template  = '../data/templates/icom/';
+% path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
 
 % path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
 % path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
@@ -14,8 +26,8 @@ path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
 
 %% Load the hillsloper data and modify it for MOSART 
 
-load([path_domain_data 'mosart_hillslopes']);
-slopes = mosart_hillslopes; clear mosart_hillslopes
+load([path_domain_data filesep 'mosart_hillslopes'],'mosartslopes');
+slopes = mosartslopes; clear mosartslopes
 
 % to compute the surface area of each sub-basin in units of steradians
 Aearth  = 510099699070762;       % m2, this is earth area defined in E3SM
@@ -32,6 +44,9 @@ area    = ([slopes.area].*4.*pi./Aearth)';      % sr
 % sum(area)
 % sum([slopes.area])
 % 12961625875
+
+% get the area form the area file
+A        = readfiles(area_file);
 
 % compute the bounding box of each sub-basin
 for n = 1:length(slopes)
