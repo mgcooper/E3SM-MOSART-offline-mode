@@ -22,15 +22,15 @@ function [i_downstream,ID_downstream] = findDownstreamCells(ID,dnID,ipoints,IDty
 %------------------------------------------------------------------------------
 % input parsing
 %------------------------------------------------------------------------------
-   p                 = inputParser;
-   p.FunctionName    = 'findDownstreamCells';
-   
-   addRequired(p, 'ID',                @(x)isnumeric(x));
-   addRequired(p, 'dnID',              @(x)isnumeric(x));
-   addRequired(p, 'points',            @(x)islogical(x) | isnumeric(x));
-   addOptional(p, 'IDtype', 'mosart',  @(x)ischar(x));
-   
-   parse(p,ID,dnID,ipoints,IDtype);
+p                 = inputParser;
+p.FunctionName    = 'findDownstreamCells';
+
+addRequired(p, 'ID',                @(x)isnumeric(x));
+addRequired(p, 'dnID',              @(x)isnumeric(x));
+addRequired(p, 'points',            @(x)islogical(x) | isnumeric(x));
+addOptional(p, 'IDtype', 'mosart',  @(x)ischar(x));
+
+parse(p,ID,dnID,ipoints,IDtype);
    
 %------------------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ switch IDtype
       ioutlet = find(dnID==-9999);
    case 'hexwatershed'
    % this would be used if lCellID and lCellID_downslope are passed in as ID/dnID
-      ioutlet  = find(dnID==-1);
+      ioutlet = find(dnID==-1);
 end
 
 
@@ -59,7 +59,8 @@ for n = 1:numpoints
    idn      = ipoints(n);
    dnID_n   = [];
    dnidx_n  = [];
-   while idn ~= ioutlet
+   
+   while ~ismember(idn,ioutlet) % idn ~= ioutlet % use ismember if ioutlet is not scalar
       idn      = find(ID==dnID(idn));  % for 'mosart', idn is just dnID(idn)
       dnID_n   = [dnID_n; dnID(idn)];  %#ok<AGROW>
       dnidx_n  = [dnidx_n; idn];       %#ok<AGROW>
@@ -68,3 +69,18 @@ for n = 1:numpoints
    ID_downstream{n} = dnID_n; % keep the outlet id
    i_downstream{n} = dnidx_n;
 end
+
+
+% % this is the algorithm in hexmesh_dnID:
+% for n = 1:N
+%    if cell_dnID(n) == -9999
+%       dnID(n) = -9999;
+%    else
+%       idx = find(cell_ID == cell_dnID(n));
+%       if isempty(idx)
+%          dnID(n) = -9999;
+%       else
+%          dnID(n) = ID(idx);
+%       end
+%    end
+% end

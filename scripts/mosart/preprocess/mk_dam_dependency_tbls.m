@@ -20,7 +20,10 @@ load('mpas_flowline.mat','Line');
 load('susq_dams.mat','Dams');
 
 % find mesh cell flow direction. this is used to find all cells downstream of
-% each dam
+% each dam (note: cell_ID, cell_dnID were global_ID, global_dnID in prior
+% versions and I cannot recall the distinction or why I changed, I know it
+% relates to the precise or implied meaning of 'global_ID' versus local ID and
+% it will come back eventually, so delete this note once I remember why)
 %----------------------------------------------------
 [cell_ID, cell_dnID] = hexmesh_dnID(Mesh);
 
@@ -37,7 +40,7 @@ Line = findMeshCellsOnFlowline(Mesh,Line);
 
 % run the kdtree function
 %-------------------------
-[Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,'searchradius',rxy,'IDtype','global');
+[Dams,Mesh] = makeDamDependency_tbls(Dams,Mesh,Line,'searchradius',rxy,'IDtype','global');
 
 % put the dependent cells into their own table
 numdams = height(Dams);
@@ -55,7 +58,6 @@ if savedata == true
 end
 
 %% plot the result
-%-------------------------
 
 % choose a dam, and color the faces of the dependent mesh cells
 figure('Position', [50 60 1200 1200]); hold on; 

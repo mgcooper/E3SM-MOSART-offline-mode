@@ -3,9 +3,9 @@ function [newlinks,inletID,outletID] = mos_makenewlinks(links,nodes)
 %upstream/downstream link connectivity as well as the inlet (headwater)
 %and outlet id's
 
-newlinks    = links;    % inherit the geometry and bounding box
-inletID     = [];       % initialize the inlet and outlet ID arrays
-outletID    = [];
+newlinks = links;    % inherit the geometry and bounding box
+inletID = [];        % initialize the inlet and outlet ID arrays
+outletID = [];
 
 for n = 1:length(links)
    
@@ -22,8 +22,8 @@ for n = 1:length(links)
    
    % use 'ul' for 'uplink' instead of 'us' for 'upstream'
    if length(us_conn_id) > 1   % this is a confluence
-      ul_id   = us_conn_id(us_conn_id~=link_id);
-      n_ul    = length(ul_id);
+      ul_id = us_conn_id(us_conn_id~=link_id);
+      n_ul = length(ul_id);
       while n_ul > 0
          i_ul = find(ismember([links.id],ul_id(n_ul)));
          newlinks(i_ul).ds_link_ID = link_id;
@@ -40,33 +40,31 @@ for n = 1:length(links)
    newlinks(n).ds_conn_ID  = ds_conn_id;
    
    if length(us_conn_id) == 1
-      inletID    = [inletID;links(n).id];
+      inletID = [inletID;links(n).id];
    end
    
    if length(ds_conn_id) == 1
-      outletID   = [outletID;links(n).id];
+      outletID = [outletID;links(n).id];
    end
 end
 
 % outlet links have no dnid, set to nan
 for n = 1:length(newlinks)
    if isempty(newlinks(n).ds_link_ID)
-      %         disp(n)
+      % disp(n)
       newlinks(n).ds_link_ID = nan;
    end
 end
 
 % remove dupiclate fields
-newlinks    = rmfield(newlinks,{'id','ds_node_id','us_node_id'});
+newlinks = rmfield(newlinks,{'id','ds_node_id','us_node_id'});
 
 % not sure if this is needed, it was in a different part of the script
 % for n = 1:length(links)
-%     ds_node_id      = str2double(links(n).ds_node_id);
-%     ds_node_id      = find(ismember([nodes.hs_id],ds_node_id));
+%     ds_node_id = str2double(links(n).ds_node_id);
+%     ds_node_id = find(ismember([nodes.hs_id],ds_node_id));
 %     if length(ds_node_id) == 1
-%         outlet_ID   = links(n).id;
+%         outlet_ID = links(n).id;
 %     end
 % end
-
-end
 

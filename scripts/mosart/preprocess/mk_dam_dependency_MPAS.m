@@ -17,6 +17,8 @@ rxy = 10000;
 setpath(['icom/hexwatershed/' hexvers],'data');
 setpath('icom/dams/','data');
 
+%% load the data
+
 % load the dams
 load('icom_dams.mat','Dams');
 
@@ -26,7 +28,7 @@ fdomain = 'domain_lnd_Mid-Atlantic_MPAS_c220107.nc';
 domain = ncreaddata(fdomain);
 mosart = ncreaddata(fmosart);
 
-% find mesh cell flow direction
+%% find mesh cell flow direction
 ID = [mosart.ID];
 dnID = [mosart.dnID];
 
@@ -34,24 +36,23 @@ sum(ID==-9999)
 sum(ID==-1)
 sum(dnID==-9999)
 
-% get the x,y location of the dams and the mesh cell centroids
-xdams = Dams.Lon;
-ydams = Dams.Lat;
+%% get the x,y location of the dams and the mesh cell centroids
+xdams = Dams.LONGITUDE;
+ydams = Dams.LATITUDE;
 xmesh = transpose([mosart.lon]);
 ymesh = transpose(wrapTo180([mosart.lat]));
 zmesh = mean(transpose([mosart.ele]),2);
 
-
 figure; scatter(xmesh,ymesh)
 
-[ioutlet,icontributing] = mosartOutletContributingArea(        ...
-                                    fmosart,xmesh,ymesh);
+%%
+[ioutlet,icontributing] = mosartOutletContributingArea(fmosart,xmesh,ymesh);
 
 dnID(ioutlet)
 
 show_river_network(fmosart,10)
                                  
-% project to utm. i used this to find the zone: utmzone(ymesh(1),xmesh(1))
+%% project to utm. i used this to find the zone: utmzone(ymesh(1),xmesh(1))
 projutm18T     = projcrs(32618,'Authority','EPSG');
 [xmesh,ymesh]  = projfwd(projutm18T,ymesh,xmesh);
 [xdams,ydams]  = projfwd(projutm18T,xdams,ydams);
@@ -62,28 +63,26 @@ projutm18T     = projcrs(32618,'Authority','EPSG');
 %    plot(zmesh(n,1:100)); hold on;
 % end
 
-% run the kdtree function
-%-------------------------
+%% run the kdtree function
+
 DependentCells =  makeDamDependency(ID,dnID,[xdams ydams],[xmesh ymesh zmesh], ...
                   'searchradius',rxy);
 
-% add the dependent cells to the Dams tble
+%% add the dependent cells to the Dams tble
 for n = 1:numel(xdams)
    ok = ~isnan(DependentCells(n,:));
    Dams.ID_DependentCells{n} = DependentCells(n,ok);
 end
 
-% save the data
+%% save the data
 if savedata == true
    save('data/matfiles/Dams_with_Dependency.mat','Dams');
    save('data/matfiles/DependentCellsArray.mat','DependentCells');
 end
 
 
+%%
 
-
-
-% -----------------------------------------------------
 % this shows how to use the lat/lon to map the ID from susq domain to icom
 load('mpas_mesh.mat','Mesh');
 prec = 10;

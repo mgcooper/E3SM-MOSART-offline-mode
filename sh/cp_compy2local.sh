@@ -1,6 +1,6 @@
 #!/bin/bash
 
-
+# i think this one has the error chang
 # /compyfs/liao313/04model/pyhexwatershed/susquehanna/pyhexwatershed20220901016/
 
 # ------------------------------------------------------------
@@ -79,11 +79,22 @@
 # ------------------------------------------------------------
 # copy a directory
 # ------------------------------------------------------------
-SRCPATH=coop558@compy01:/compyfs/liao313/04model/pyhexwatershed/susquehanna/pyhexwatershed20220901016/pyflowline/0001
-DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20220901016/pyflowline
+
+# note the two different directories:
+# /compyfs/icom/liao313/04model/pyhexwatershed/icom
+# /compyfs/liao313/04model/pyhexwatershed/icom
+# the latest data as of jan 2022 is in the first one:
+
+# SRCPATH=coop558@compy01:/compyfs/icom/liao313/04model/pyhexwatershed/icom/pyhexwatershed20221115006/pyflowline
+# DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20221115006/pyflowline
+
+SRCPATH=coop558@compy01:/compyfs/icom/liao313/04model/pyhexwatershed/icom/pyhexwatershed20221115006/hexwatershed
+DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20221115006/hexwatershed
+
+if [ ! -d $DSTPATH ]; then mkdir $DSTPATH; fi
 
 # this will create the directory at the end of SRCPATH in DSTPATH
-rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
+# rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
 
-# this will not create the directory at the end of SRCPATH in DSTPATH
+# this will not create the directory at the end of SRCPATH in DSTPATH (it will copy the contents of the directory at the end of SRCPATH into the directory at the end of DSTPATH)
 rsync -a -e ssh -P "$SRCPATH/" "$DSTPATH"

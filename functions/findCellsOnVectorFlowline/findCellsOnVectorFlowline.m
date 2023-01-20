@@ -1,23 +1,25 @@
-function Line = findMeshCellsOnFlowline(Mesh,Line)
-%FINDMESHCELLSONFLOWLINE finds the mesh cells that contain each flowline
+function [Line,Mesh] = findCellsOnVectorFlowline(Line,Mesh)
+%FINDCELLSONVECTORFLOWLINE finds the mesh cells that contain each flowline
 %vertex and adds that info to the Line structure
 % 
 % Syntax:
 % 
-%  Line = findMeshCellsOnFlowline(Mesh,Line)
+%  [Line,Mesh] = findCellsOnVectorFlowline(Line,Mesh) finds mesh cells that are
+%  "on" i.e. that contain a flowline vertex and adds the indices to the Line and
+%  Mesh geotables.
 % 
 % Author: Matt Cooper, 05-Oct-2022, https://github.com/mgcooper
 
 %------------------------------------------------------------------------------
 % input parsing
 %------------------------------------------------------------------------------
-   p                 = inputParser;
-   p.FunctionName    = 'findMeshCellsOnFlowline';
-   
-   addRequired(p,    'Mesh',                 @(x)isstruct(x)           );
-   addRequired(p,    'Line',                 @(x)isstruct(x)           );
-   
-   parse(p,Mesh,Line);
+p                 = inputParser;
+p.FunctionName    = 'findCellsOnVectorFlowline';
+
+addRequired(p,    'Mesh',                 @(x)isstruct(x)           );
+addRequired(p,    'Line',                 @(x)isstruct(x)           );
+
+parse(p,Mesh,Line);
    
 %------------------------------------------------------------------------------
 
@@ -53,6 +55,12 @@ for n = 1:numel(Line)
    % geoshow(Line(n));
 end
 
+% find the mesh cells that contain a flowline and add that info to the Mesh 
+imeshline = vertcat(Line(:).iMesh);
+[Mesh.iflowline] = deal(false);
+for n = 1:numel(imeshline)
+   Mesh(imeshline(n)).iflowline = true;
+end
 
 
 

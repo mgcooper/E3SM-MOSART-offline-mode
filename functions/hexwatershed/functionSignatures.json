@@ -19,6 +19,13 @@
          {"name":"filename",     "kind":"namevalue",  "type":["char"]}
       ]
    },
+   "hexmesh_dnID":
+   {
+      "inputs":
+      [
+         {"name":"Mesh",   "kind":"required",   "type":["struct"]}
+      ]
+   },
    "patch_hexmesh":
    {
       "inputs":

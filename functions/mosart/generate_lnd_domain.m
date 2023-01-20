@@ -120,5 +120,3 @@ netcdf.putVar(ncid_out,ivar-1,frac);
 
 netcdf.close(ncid_out);
 
-end
-

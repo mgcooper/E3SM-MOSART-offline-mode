@@ -14,18 +14,18 @@ function makeMosartHexwatershed(fhex,ftem,fmos,fdom,show_river,show_attributes)
 %------------------------------------------------------------------------------
 % input parsing
 %------------------------------------------------------------------------------
-   p                 = inputParser;
-   p.FunctionName    = 'makeMosartHexwatershed';
-   
-   addRequired(p,    'x',                    @(x)isnumeric(x)     );
-   addParameter(p,   'namevalue',   false,   @(x)islogical(x)     );
-   addOptional(p,    'option',      nan,     @(x)ischar(x)        );
-   
-   parse(p,x,varargin{:});
-   
-   namevalue = p.Results.namevalue;
-   option = p.Results.option;
-   
+p                 = inputParser;
+p.FunctionName    = 'makeMosartHexwatershed';
+
+addRequired(p,    'x',                    @(x)isnumeric(x)     );
+addParameter(p,   'namevalue',   false,   @(x)islogical(x)     );
+addOptional(p,    'option',      nan,     @(x)ischar(x)        );
+
+parse(p,x,varargin{:});
+
+namevalue = p.Results.namevalue;
+option = p.Results.option;
+
 %------------------------------------------------------------------------------
 
 % Input: 
@@ -53,12 +53,13 @@ areaTotal2     = [data(:).DrainageArea]';
 dSlope_between = [data(:).dSlope_between]'; 
 rlen           = [data(:).dLength_flowline]';% This is conceptual length. 
                                            % TODO: replace with actual river legnth
-numc     = length(globalID);
+numc = length(globalID);
+
 % Read vertices
 lonv = NaN(8,numc);
 latv = NaN(8,numc);
 numv = NaN(length(globalID),1);
-for i = 1 : numc
+for i = 1:numc
   tmpx = [data(i).vVertex(:).dLongitude_degree];
   tmpy = [data(i).vVertex(:).dLatitude_degree];
   numv(i) = length(tmpx);
@@ -67,11 +68,10 @@ for i = 1 : numc
 end
 
 % Convert ID
-ID = 1 : length(globalID);
-ID = ID';
+ID = transpose(1:length(globalID));
 dnID = NaN(length(globalID),1);
 
-for i = 1 : length(ID)
+for i = 1:length(ID)
   if globaldnID(i) == -9999
       dnID(i) = -9999;
   else

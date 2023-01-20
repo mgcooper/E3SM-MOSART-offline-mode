@@ -1,7 +1,7 @@
-function [Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,varargin)
+function [Dams,Mesh] = makeDamDependency_mesh(Dams,Mesh,Line,varargin)
 %makeDamDependency adds an array of logical indices called 'DependentCells' to
-%input table Dams. The DependentCells for each dam are true for mesh cells in Mesh that
-%'depend' on each dam in Dams.
+%input table Dams. The DependentCells for each dam are true for mesh cells in
+%Mesh that 'depend' on each dam in Dams.
 % 
 % Syntax:
 % 
@@ -18,8 +18,18 @@ function [Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,varargin)
 %  damname is a character or string that sets which Dam in input table Dams is
 %  used, for example to test the function on one dam.
 % 
-% Author: Matt Cooper, Sep-26-2022, https://github.com/mgcooper
+% Author: Matt Cooper, 26-Sep-2022, https://github.com/mgcooper
 % 
+
+% 9 Jan 2022: I compared this to the _tbls version and I am nearly certain this
+% version can be deleted. The main difference is the distinction b/w imeshdams
+% and iflowlinedams in the if useflowline section, which I recall was related
+% to something I realized that simplified the indexing, I think something about
+% indexing going from 1:numcells when I was using a find statement, and by
+% adding the if useflowline statement to the _tbls version I was able to keep
+% both behaviors. I almost deleted this function but keepign it for now just in
+% case. MAYBE I MADE THIS TEMPORARILY TO WORK WITH THE WHOLE DOMAIN MESH AND
+% NEVER WORKED ON IT THEN MADE THE _TBLS VERSION 
 
 %------------------------------------------------------------------------------
 % input parsing
@@ -28,52 +38,37 @@ p                 = inputParser;
 p.FunctionName    = 'makeDamDependency';
 p.StructExpand    = false;
    
-addRequired(p,    'Dams',                 @(x)istable(x)            );
-addRequired(p,    'Mesh',                 @(x)isstruct(x)           );
-addRequired(p,    'Line',                 @(x)isstruct(x)           );
-addParameter(p,   'searchradius', 10000,  @(x)isnumeric(x)          );
-addParameter(p,   'plotfig',      false,  @(x)islogical(x)          );
-addParameter(p,   'damname',      'all',  @(x)ischar(x)|isstring(x) );
+addRequired(p,    'Dams',                    @(x)istable(x)            );
+addRequired(p,    'Mesh',                    @(x)isstruct(x)           );
+addRequired(p,    'Line',                    @(x)isstruct(x)           );
+addParameter(p,   'searchradius', 10000,     @(x)isnumeric(x)          );
+addParameter(p,   'plotfig',      false,     @(x)islogical(x)          );
+addParameter(p,   'damname',      'all',     @(x)ischar(x)|isstring(x) );
 
 parse(p,Dams,Mesh,Line,varargin{:});
-   
+
+rxy      = p.Results.searchradius;
 plotfig  = p.Results.plotfig;
 damname  = p.Results.damname;
-rxy      = p.Results.searchradius;
    
 %------------------------------------------------------------------------------
+
+useflowline = false; 
 
 % if a single dam was requested, subset Dams
 if damname ~= "all"
    Dams = Dams(Dams.Name == damname,:);
 end
-
-% dam capacity
-cap      = Dams.Capacity_k;
-numdams  = size(Dams,1);
+numdams = size(Dams,1);
 
 % get the x,y location of all the mesh cell centroids
-latmesh  = [Mesh.dLatitude_center_degree];   latmesh = latmesh(:);
-lonmesh  = [Mesh.dLongitude_center_degree];  lonmesh = lonmesh(:);
-zmesh    = [Mesh.Elevation];                 zmesh = zmesh(:);
+latmesh  = transpose([Mesh.dLatitude_center_degree]);
+lonmesh  = transpose([Mesh.dLongitude_center_degree]);
+zmesh    = transpose([Mesh.Elevation]);
 
 % NOTE: these are not used but keep them if we want to use the flowline rather
-% than the mesh cells that contain the flowline.  
-
-% % get the x,y location of the flowlines. imesh is the indices of the hex cells
-% % that contain a flowline indici
-% latline     = [];
-% lonline     = [];
-% for n = 1:numel(Line)
-%    latline     = [latline;nan;Line(n).Lat];
-%    lonline     = [lonline;nan;Line(n).Lon];
-%    imeshline   = [imeshline;Line(n).iMesh];
-% end
-
-% imeshline   = [];
-% for n = 1:numel(Line)
-%    imeshline   = [imeshline;Line(n).iMesh];
-% end
+% than the mesh cells that contain the flowline. get the x,y of the flowlines.
+% [latline,lonline] = polyjoin({Line.Lat},{Line.Lon});
 
 % project to utm. i used this to find the zone: utmzone(clat(1),clon(1))
 proj           = projcrs(32618,'Authority','EPSG');
@@ -86,23 +81,29 @@ proj           = projcrs(32618,'Authority','EPSG');
 % unique([Mesh.iSegment])
 
 % build the kdtree for the mesh
-MeshTree    = createns([xmesh ymesh]);
+MeshTree = createns([xmesh ymesh]);
 
-% % find the hex cell nearest each dam that contains a flowline
-% [Mesh.iflowline] = deal(false);
-% for n = 1:numel(imeshline)
-%    Mesh(imeshline(n)).iflowline = true;
-% end
-% 
-% % subset the mesh cells that contain a flowline
-% MeshLine    = Mesh(imeshline);
-% xmeshline   = xmesh(imeshline);     % mesh-flowline x
-% ymeshline   = ymesh(imeshline);     % mesh-flowline y
-% zmeshline   = zmesh(imeshline);     % mesh-flowline elevation
+% get the mesh cells that contain a flowline and add that info to the Mesh
+imeshline = vertcat(Line(:).iMesh);
+[Mesh.iflowline] = deal(false);
+for n = 1:numel(imeshline)
+   Mesh(imeshline(n)).iflowline = true;
+end
+
+% subset the mesh cells that contain a flowline
+xmeshline = xmesh(imeshline);     % mesh-flowline x
+ymeshline = ymesh(imeshline);     % mesh-flowline y
+zmeshline = zmesh(imeshline);     % mesh-flowline elevation
+MeshLine = Mesh(imeshline);
 
 % imeshdams are the indices of the mesh cells nearest each dam
-% [imeshdams,~]  = dsearchn([xmeshline ymeshline],[xdams ydams]);
-[imeshdams,~]  = dsearchn([xmesh ymesh],[xdams ydams]);
+if useflowline == true
+   % find the nearest cell to each dam that contains a flowline:
+   [imeshdams,~] = dsearchn([xmesh(imeshline) ymesh(imeshline)],[xdams ydams]);
+else
+   % find the nearest cell to each dam whether it contains a flowline or not:
+   [imeshdams,~] = dsearchn([xmesh ymesh],[xdams ydams]);
+end
 
 % for each dam, find all downstream cells to the outlet
 [dnidx,dnID] = findDownstreamCells(Mesh,imeshdams);
@@ -130,12 +131,12 @@ if plotfig == true
    % dam along the flowline. black = flowline
    figure('Position', [50 60 1200 1200]); hold on; 
    patch_hexmesh(Mesh); % use 'FaceMapping','Elevation' to see the elevation
+   patch_hexmesh(MeshLine,'FaceColor','g');
    patch_hexmesh(Mesh(imeshdams),'FaceColor','m'); hold on;
    geoshow(Line); scatter(Dams.Lon,Dams.Lat,'b','filled');
    
    % use the cartesian coords:
    %    macfig; scatter(mx,my,'filled'); hold on;
-   %    scatter(dx,dy,cap.*1000,'filled');
    %    plot(fx,fy,'m');
    %    scatter(mx(idx),my(idx),100,'g','filled');
 end
@@ -159,8 +160,13 @@ for n = 1:numdams
    % get the downstream cells for this dam
    iquery   = Dams.i_DownstreamCells{n};
    xyquery  = [xmesh(iquery) ymesh(iquery)];
-%    iquery   = zmeshline<elev;
-%    xyquery  = [xmeshline(iquery) ymeshline(iquery)];
+
+   % these iquery,xyquery versions were commented out. i added the if
+   % useflowline statement to draw a parallel with the _tbls version
+   if useflowline == true
+      iquery   = zmeshline<elev;
+      xyquery  = [xmeshline(iquery) ymeshline(iquery)];
+   end
 
    % query the mesh tree to find all cells below the dam that are also within
    % rxy distance of the flowline. all cells in xyquery are below the dam, but

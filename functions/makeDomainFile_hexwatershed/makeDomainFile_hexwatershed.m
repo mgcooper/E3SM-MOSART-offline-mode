@@ -14,17 +14,17 @@ function [Z,R] = makeDomainFile_Hexwatershed(x,varargin)
 %------------------------------------------------------------------------------
 % input parsing
 %------------------------------------------------------------------------------
-   p                 = inputParser;
-   p.FunctionName    = 'makeDomainFile_Hexwatershed';
-   
-   addRequired(p,    'x',                    @(x)isnumeric(x)     );
-   addParameter(p,   'namevalue',   false,   @(x)islogical(x)     );
-   addOptional(p,    'option',      nan,     @(x)ischar(x)        );
-   
-   parse(p,x,varargin{:});
-   
-   namevalue = p.Results.namevalue;
-   option = p.Results.option;
+p                 = inputParser;
+p.FunctionName    = 'makeDomainFile_Hexwatershed';
+
+addRequired(p,    'x',                    @(x)isnumeric(x)     );
+addParameter(p,   'namevalue',   false,   @(x)islogical(x)     );
+addOptional(p,    'option',      nan,     @(x)ischar(x)        );
+
+parse(p,x,varargin{:});
+
+namevalue = p.Results.namevalue;
+option = p.Results.option;
    
 %------------------------------------------------------------------------------
 

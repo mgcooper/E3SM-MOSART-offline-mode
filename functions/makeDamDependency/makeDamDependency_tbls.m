@@ -1,4 +1,4 @@
-function [Dams,Mesh] = makeDamDependency(Dams,Mesh,Line,varargin)
+function [Dams,Mesh] = makeDamDependency_tbls(Dams,Mesh,Line,varargin)
 %makeDamDependency adds an array of logical indices called 'DependentCells' to
 %input table Dams. The DependentCells for each dam are true for mesh cells in
 %Mesh that 'depend' on each dam in Dams.
@@ -37,7 +37,7 @@ addParameter(p,   'damname',      'all',     @(x)ischar(x)|isstring(x) );
 addParameter(p,   'IDtype',       'local',   @(x)ischar(x)|isstring(x) );
 
 parse(p,Dams,Mesh,Line,varargin{:});
-   
+
 rxy      = p.Results.searchradius;
 plotfig  = p.Results.plotfig;
 damname  = p.Results.damname;
@@ -73,7 +73,7 @@ proj           = projcrs(32618,'Authority','EPSG');
 % build the kdtree for the mesh
 MeshTree = createns([xmesh ymesh]);
 
-% get the mesh cells that contain a flowline and add that info to the Mesh 
+% get the mesh cells that contain a flowline and add that info to the Mesh
 imeshline = vertcat(Line(:).iMesh);
 [Mesh.iflowline] = deal(false);
 for n = 1:numel(imeshline)

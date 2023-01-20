@@ -84,5 +84,3 @@ axis image
 h.c.Label.Interpreter='latex';
 h.c.Label.FontSize=20;
 
-end
-

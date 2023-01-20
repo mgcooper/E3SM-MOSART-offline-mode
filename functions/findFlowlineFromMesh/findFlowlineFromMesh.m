@@ -33,11 +33,13 @@ for n = 1:numel(isegments)
    segment_IDs{n} = [Mesh([Mesh.iSegment]==isegments(n)).global_ID];
 end
 
+%%
+
 % get the flowline segments based on the ID->dnID mapping
 % this uses the mesh cells / ID->dnID rather than
 % the flowline / dsearch as in findMeshCellsOnFlowline. it finds the flow
 % segments without any flowline files/info
-   
+
 ID = [MeshLine.global_ID];
 dnID = [MeshLine.global_dnID];
 % [dnID,isort]   = sort(dnID,'descend');
@@ -52,9 +54,28 @@ end
 ilinks = unique(horzcat(link_IDs{:}));
 
 
+%% this is a copy of the part above
+
+ID = [MeshLine.global_ID];
+dnID = [MeshLine.global_dnID];
+% [dnID,isort] = sort(dnID,'descend');
+
+difID = ID(2:end)-dnID(1:end-1);
+istart = unique(vertcat(1,find(difID ~= 0),numel(ID)+1));
+
+for n = 1:numel(istart)-1
+   linkIDs{n} = ID(istart(n):istart(n+1)-1);
+end
+
+ilinks = unique(horzcat(link_IDs{:}));
+
+
+
+%%
+
 % not sure if anything below here is useful, it was stuff i wrote before i
 % figured out how to trace from each dam to the outlet using the mesh-based
-% global ID->dnID mapping without any flowline information. prior tot hat, i
+% global ID->dnID mapping without any flowline information. prior to that, i
 % was trying to work with the flowline segments, and wanted to find a way to
 % determine all cells downstream of each dam from the segments rather than the
 % cell-by-cell ID->dnID, so I got sidelined trying to figure out if the

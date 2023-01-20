@@ -1,7 +1,7 @@
 {
    "_schemaVersion": "1.0.0",
    "_comment": "this is an example of a comment",
-   "findMeshCellsOnFlowline":
+   "findCellsOnVectorFlowline":
    {
       "inputs":
       [
