@@ -1,23 +1,24 @@
 clean
 
 %% set paths
-path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
-path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
-path.sag    = setpath('interface/data/hillsloper/sag_basin/');
-cd(path.save)
+pathdata = '/Users/coop558/work/data/e3sm/templates/';
+pathsave = '/Users/coop558/work/data/e3sm/config/';
+pathhslp = getenv('USER_HILLSLOPER_DATA_PATH');
+% pathsag  = setpath('interface/data/hillsloper/sag_basin/');
+cd(pathsave)
 
 %% load the hillsloper data
-% load([path.sag 'sag_hillslopes']); slopes = newslopes; clear newslopes;
-load([path.sag 'mosart_hillslopes']);  
-slopes          = mosart_hillslopes; clear mosart_hillslopes
+% load([pathhslp 'sag_hillslopes']); slopes = newslopes; clear newslopes;
+load(fullfile(pathhslp,'mosart_hillslopes'));
+slopes          = mosartslopes; clear mosartslopes
 sagvars         = fieldnames(slopes);
 i               = isnan([slopes.dnID]);
 slopes(i).dnID  = -9999;                    % replace nan with -9999
 
 %% read in icom files to use as a template
 % see sftp://compy.pnl.gov/compyfs/inputdata/rof/mosart/
-fmosart = [path.data 'MOSART_icom_half_c200624.nc'];
-fsave   = [path.save 'MOSART_sag_test.nc'];
+fmosart = [pathdata 'MOSART_icom_half_c200624.nc'];
+fsave   = [pathsave 'MOSART_sag_test.nc'];
 
 % if exist(fsave,'file'); delete(fsave); end
 

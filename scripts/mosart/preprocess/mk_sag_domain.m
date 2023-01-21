@@ -7,22 +7,13 @@ runID       = 'huc0802_gauge15906000_nopf';
 
 % set paths
 path_domain_data           = getenv('USER_HILLSLOPER_DATA_PATH');
-path_domain_file_template  = getenv('USER_MOSART_TEMPLATE_PATH')
+path_domain_file_template  = getenv('USER_MOSART_TEMPLATE_PATH');
 path_mosart_file_save      = getenv('USER_E3SM_CONFIG_PATH');
 path_area_file             = getenv('USER_ATS_DATA_PATH');
 
 % 
 area_file = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
-area_file = [path_area_file filesep runID filesep area_file];
-
-% path_domain_data           = '../data/hillsloper/';
-% path_domain_file_template  = '../data/templates/icom/';
-% path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
-
-% path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
-% path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
-% path.sag    = setpath('interface/data/hillsloper/sag_basin/');
-% cd(path.save)
+area_file = fullfile(path_area_file,runID,area_file);
 
 %% Load the hillsloper data and modify it for MOSART 
 
@@ -41,28 +32,29 @@ frac    = (ones(size([slopes.longxy])))';
 ncells  = size(mask,1);
 area    = ([slopes.area].*4.*pi./Aearth)';      % sr
 
-% sum(area)
-% sum([slopes.area])
-% 12961625875
-
 % get the area form the area file
-A        = readfiles(area_file);
+A = readfiles(area_file); 
+
+% sum(A.area_m2_)/sum([slopes.area]) 1.16
+% sum([slopes.area]) trib: 73818500, sag (?) 12961625875
 
 % compute the bounding box of each sub-basin
 for n = 1:length(slopes)
-    bbox        = slopes(n).bbox;
-    xbox        = bbox(:,1);
-    ybox        = bbox(:,2);
+    %bbox        = slopes(n).bbox;
+    bbox        = slopes(n).BoundingBox;
+    xbox        = bbox(:,1); % [min(slopes(n).X_hs) max(slopes(n).X_hs)]
+    ybox        = bbox(:,2); % [min(slopes(n).Y_hs) max(slopes(n).Y_hs)]
     xv(:,n)     = [xbox(1) xbox(2) xbox(2) xbox(1)]; % ll ccw
     yv(:,n)     = [ybox(1) ybox(1) ybox(2) ybox(2)];
 end
 
 %% 2. read in icom files to use as a template, and write the new file
 
-fdomain     = 'domain_u_icom_half_sparse_grid_c200610.nc';
-fdomain     = [path_domain_file_template fdomain];
+fdomain = fullfile(...
+   path_domain_file_template,'domain_u_icom_half_sparse_grid_c200610.nc');
 
-fsave       = [path.save 'domain_sag_test.nc'];
+fsave = fullfile(...
+   path_mosart_file_save,'domain_trib_test.nc'); % was domain_sag_test
 
 if exist(fsave,'file'); delete(fsave); end
 
@@ -113,3 +105,6 @@ ncwrite(fsave,'frac',frac);
 % read in the new file to compare with the old file                        
 %==========================================================================
 newinfo.domain  = ncinfo(fsave);
+
+
+
