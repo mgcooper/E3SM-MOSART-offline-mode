@@ -1,5 +1,6 @@
-function [newinfo,roffATS,roffMP] = makeAtsRunoff(ats_runID,ats_fname, ...
-   slopes_fname,site_name,runoff_output_path,save_file,runoff_template_path,varargin)
+function [newinfo,roffATS,roffMP] = makeAtsRunoff(ats_runID,ats_fname,site_name, ...
+   path_domain_data_file,path_runoff_file_save,path_runoff_file_template, ...
+   save_file,varargin)
 %MAKEATSRUNOFF make ats runoff input file for mosart
 % 
 % Syntax:
@@ -20,9 +21,9 @@ function [newinfo,roffATS,roffMP] = makeAtsRunoff(ats_runID,ats_fname, ...
 
 % Author: Matt Cooper, 10-Nov-2022, https://github.com/mgcooper
 
-%------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
 % input parsing
-%------------------------------------------------------------------------------
+%-------------------------------------------------------------------------------
 % p                 = inputParser;
 % p.FunctionName    = 'makeAtsRunoff';
 % 
@@ -42,34 +43,47 @@ function [newinfo,roffATS,roffMP] = makeAtsRunoff(ats_runID,ats_fname, ...
 % https://www.mathworks.com/help/matlab/matlab_prog/parse-function-inputs.html
 %------------------------------------------------------------------------------
 
-runpath     = [getenv('USER_ATS_DATA_PATH') filesep ats_runID];
-fname_ats   = [runpath filesep ats_fname];
+% NOTE: this combines mk_ats_runoff and read_ats_hillslope_ensemble and converts
+% that combination to a function. Once working, delete mk_ats_runoff.m
 
-fname_slopes = [getenv('USER_HILLSLOPER_DATA_PATH') filesep slopes_fname];
+% set the filename for the ats data
+runpath = ...
+   fullfile( ...
+   getenv('USER_ATS_DATA_PATH'),ats_runID);
+
+fname_ats = ...
+   fullfile( ...
+   runpath,ats_fname);
+
+% set the filename for the custom area data
+fname_area = ...
+   fullfile(...
+   runpath,'huc0802_gauge15906000_nopf_subcatch_area.csv');
+
+% set the filename for the output file (append runID to path_runoff_file_save)
+path_runoff_file_save = ...
+   fullfile( ...
+   path_runoff_file_save,ats_runID);
 
 % load the hillsloper data
-load(fname_slopes,'mosartslopes'); slopes = mosartslopes; clear mosartslopes;
+load( ...
+   path_domain_data_file,'mosartslopes');
 
-fname_area = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
-fname_area = [runpath filesep fname_area];
-
-% append the runID to the runoff_output_path
-runoff_output_path = [runoff_output_path filesep ats_runID];
 
 % create the output path if it doesn't exist
-if ~exist(runoff_output_path,'dir')
-   mkdir(runoff_output_path);
+if ~exist(path_runoff_file_save,'dir')
+   mkdir(path_runoff_file_save);
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % below here is just a copy of the most recent read_ats_hillslope_ensemble (v3)
 
 % these data are just columns of runoff
-T     = readfiles(fname_ats,'dataoutputtype','timetable');
-T     = settableunits(T,'m3/d');
+T = readfiles(fname_ats,'dataoutputtype','timetable');
+T = settableunits(T,'m3/d');
 
 % read the area. the negative numbers are underscores in the runoff table, add 
-A     = readfiles(fname_area);
+A = readfiles(fname_area);
 
 % the new spreadsheet doesn't convert to a timetable using readfiles. the first
 % three columns are year, doy, doy (repeated). So remove them, build a calendar,
@@ -87,15 +101,19 @@ T     = table2timetable(T,'RowTimes',Time);
 
 timeATS  = T.Time;
 ndays    = numel(timeATS);
-nslopes  = numel(slopes);
+nslopes  = numel(mosartslopes);
 roffATS  = nan(ndays,nslopes);
 areaATS  = nan(1,nslopes);
 
 runyears = unique(year(timeATS));
 nyears   = numel(runyears);
 
-% % % this combines neighboring columns, i think it worked for v2 meaning that
-% % table must have been organized as such
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
+% % from mk_ats_runoff.m before the latest output from Bo that I used when
+% making this function. it combines neighboring columns, b/c I organized the
+% ats_runoff.mat table for that version in that way.
+%
 % % combine the ats runoff for each hillslope
 % for n = 1:nslopes
 %     str1 = ['slope_' num2str(2*n-1) ];
@@ -103,6 +121,16 @@ nyears   = numel(runyears);
 %     roffATS(:,n) = T.(str1) + T.(str2);
 % end
 % clear data str1 str2
+% 
+% % convert from m3/d to mm/s
+% area    = [slopes.area];                    % m2
+% roffATS = roffATS./area;                    % m/d
+% roffATS = roffATS*1000/(24*3600);           % mm/s
+% roffATS = reshape(roffATS,365,nyears,nslopes);
+% timeATS = reshape(timeATS,365,nyears);
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
 
 % this should work for the current T from part 1 above
 for n = 1:nslopes
@@ -138,20 +166,21 @@ roffMP  = nan(size(roffATS));    % initialize ats runoff
 
 for n = 1:nyears
     
-    thisyear = num2str(runyears(n));
-    frunoff = [runoff_template_path filesep 'runoff_' site_name '_' thisyear '.nc'];
-    fsave   = [runoff_output_path filesep 'runoff_' site_name '_' thisyear '.nc'];
+    nyear = num2str(runyears(n));
+    fname = ['runoff_' site_name '_' nyear '.nc'];
+    fcopy = fullfile(path_runoff_file_template,fname); % finfo = ncinfo(fcopy);
+    fsave = fullfile(path_runoff_file_save,fname);
     
     % keep the ming pan runoff to compare with ATS
-    roffMP(:,n,:) = permute(ncread(frunoff,'QDRAI'),[3 2 1]);
+    roffMP(:,n,:) = permute(ncread(fcopy,'QDRAI'),[3 2 1]);
     
     if ~exist(fsave,'file')
-        system(['cp ' frunoff ' ' fsave]);
+        system(['cp ' fcopy ' ' fsave]);
     end
     
     % QDRAI
     var     = 'QDRAI';
-    sch     = ncinfo(frunoff,var);
+    sch     = ncinfo(fcopy,var);
     Qtmp    = squeeze(roffATS(:,n,:));
     QDRAI   = nan(nslopes,1,365);
     for m = 1:365
@@ -167,7 +196,7 @@ for n = 1:nyears
 
     % QOVER
     var     = 'QOVER';
-    sch     = ncinfo(frunoff,var);
+    sch     = ncinfo(fcopy,var);
     QOVER   = 0.0.*QDRAI;
     
     if save_file
@@ -187,14 +216,50 @@ roffMP   = sum(roffMP.*area,2)/1000;
 roffATS  = array2timetable(roffATS,'RowTimes',Time);
 roffMP   = array2timetable(roffMP,'RowTimes',Time);
 
+% % compare ATS roff with ming pan roff
+% figure('Position',[165   299   762   294]);
+% subplot(1,2,1);
+% plot(timeATS(:),roffATS); hold on;
+% plot(timeATS(:),roffMP);
+% legend('ATS','Ming Pan');
+% ylabel('daily runoff [m$^3$ s$^{-1}$]');
+% 
+% subplot(1,2,2);
+% plot(timeATS(:),cumsum(roffATS.*(3600*24/1e9))); hold on;
+% plot(timeATS(:),cumsum(roffMP.*(3600*24/1e9)));
+% l = legend('ATS','Ming Pan');
+% ylabel('cumulative runoff [km$^3$]');
+% figformat
 
 
 
 
+% % this is right before I switched to passing in the full path to files
 
-
-
-
-
-
-
+% % set the filename for the ats data
+% runpath = fullfile(getenv('USER_ATS_DATA_PATH'),ats_runID);
+% 
+% fname_ats = ...
+%    fullfile( ...
+%    runpath,ats_fname);
+% 
+% % set the filename for the custom area data
+% fname_area = ...
+%    fullfile(...
+%    runpath,'huc0802_gauge15906000_nopf_subcatch_area.csv');
+% 
+% % set the filename for the hillsloper data
+% fname_domain_data = ...
+%    fullfile( ...
+%    getenv('USER_HILLSLOPER_DATA_PATH'),slopes_fname);
+% 
+% % set the filename for the output file (append runID to runoff_output_path)
+% runoff_output_path = ...
+%    fullfile( ...
+%    runoff_output_path,ats_runID);
+% 
+% 
+% % load the hillsloper data
+% load( ...
+%    fname_domain_data,'mosartslopes');
+% 

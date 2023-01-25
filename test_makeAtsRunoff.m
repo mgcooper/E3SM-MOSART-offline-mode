@@ -1,31 +1,68 @@
 clean
 
-site_name = 'trib_basin';
-save_file = true;
+% NOTE: mk_ats_runoff is entirely reconciled with this and makeAtsRunoff. The
+% only difference is the opts struct commented out below.
 
-ats_runID = 'huc0802_gauge15906000_nopf';
+save_file = true;
+site_name = 'trib_basin';
+ats_runID = 'huc0802_gauge15906000_nopf'; %'huc0802_gauge15906000';
 ats_fname = 'huc0802_gauge15906000_nopf_discharge_2D.xlsx';
 slopes_fname = 'mosart_hillslopes.mat';
 
+% this assumes the mingpan data files have already been created, then reads
+% those in and replaces the runoff with the ats runoff
 
-fname_slopes = [getenv('USER_HILLSLOPER_DATA_PATH') filesep slopes_fname];
+%% this is how it was done in mk_ats_runoff in case i want to go back to that
 
-% load the hillsloper data
-load(fname_slopes,'mosartslopes'); slopes = mosartslopes;
-
-% load([pathdata 'mosart_hillslopes']); slopes = mosartslopes;
-
-% runoff_template_path = [getenv('USER_MOSART_TEMPLATE_PATH') filesep site_name filesep 'mingpan'];
-runoff_template_path = [getenv('USER_MOSART_RUNOFF_PATH') filesep site_name filesep 'mingpan'];
-runoff_output_path = [getenv('USER_MOSART_RUNOFF_PATH') filesep site_name filesep 'ats'];
-
-
-% test the function
-[newinfo,roffATS,roffMP] = makeAtsRunoff(ats_runID,ats_fname, ...
-   slopes_fname,site_name,runoff_output_path,runoff_template_path,save_file);
+% % set the options
+% opts     = const( 'savefile',       false,                        ...
+%                   'sitename',       sitename,                     ...
+%                   'startyear',      1998,                         ...
+%                   'endyear',        2002                          );
+%                 
+% nyears   = opts.endyear-opts.startyear+1;
 
 
-cd(runoff_template_path)
+%% set paths to the runoff template files and the output path
+
+% path_runoff_file_template = ...
+%    fullfile( ...
+%    getenv('USER_MOSART_TEMPLATE_PATH'),site_name,'mingpan');
+
+path_runoff_file_template = ...  % was pathtemp in mk_ats_runoff
+   fullfile( ...
+   getenv('USER_MOSART_RUNOFF_PATH'),site_name,'mingpan');
+
+path_runoff_file_save = ...      % was pathsave in mk_ats_runoff
+   fullfile( ...
+   getenv('USER_MOSART_RUNOFF_PATH'),site_name,'ats');
+
+path_domain_data_file = ...      % was pathdata in mk_ats_runoff
+   fullfile( ...
+   getenv('USER_HILLSLOPER_DATA_PATH'),slopes_fname);
+
+path_area_file = ...
+   getenv('USER_ATS_DATA_PATH');
+
+%% load the hillsloper data that has ID and dnID and prep it for MOSART
+
+load(path_domain_data_file,'mosartslopes');
+
+plot_hillsloper(slopes,links)
+
+%% test the function
+
+[newinfo,roffATS,roffMP] = makeAtsRunoff( ...
+   ats_runID, ...
+   ats_fname, ...
+   site_name, ...
+   path_domain_data_file, ...
+   path_runoff_file_save, ...
+   path_runoff_file_template, ...
+   save_file);
+
+
+cd(path_runoff_file_template)
 
 % FROM HERE, WE NEED TO:
 % 1. use reyear_ats to make the 1997/2003 files and fix the schema
@@ -39,7 +76,8 @@ cd(runoff_template_path)
 
 % THEN WE NEED TO READ THE DATA BACK
 % 1. edit and run cp_compy2local.sh to copy the data to E3SM_OUTPUT_PATH
-% 2. 
+% 2. edit and run scripts/mosart/postprocess/read_output_test_basin.m
+% 3. 
 
 % as long as the forcing file path is set in the user_dlnd file, the run script
 % should be good as-is b/c 
