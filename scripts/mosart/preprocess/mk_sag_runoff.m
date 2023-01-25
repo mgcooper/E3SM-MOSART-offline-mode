@@ -1,35 +1,62 @@
 clean
 
+sitename = 'sag_basin';
+
+% jan 2023
+% 
+% TLDR: should be best to use mk_huc_runoff for trib and sag, but keep this
+% around until a simulation with runoff files produced by this script for both
+% trib and sag and both GPCC.daily.nc and ming pan runoff are confirmed
+% identical. Also, I like th clarity of this version even though its less
+% compact than mos_makerunoff
+% 
+% this is different enough from mos_makerunoff that I cannot tell by
+% inspection if it can be replaced by mk_huc_runoff with call to mos_makerunoff,
+% but I confirmed the runoff file this makes for the full sag basin with
+% GPCC.daily.nc runoff is identical to the one produced by the call to
+% mos_makerunoff (see comparison at end). However, the dimensions of the data
+% written to the .nc file are different, so this needs to be archived until I am
+% certain that the version written by mos_makerunoff is correct. 
+
+% More notes:
+% - this uses GPCC.daily.nc forcing
+% - mk_huc_runoff uses the mingpan sag_YYYY_mosart.nc files Tian made
+% - however, mos_makerunoff appears to work with either forcings
+
+% These notes were here when I opened this:
 % i did not update this for sag_basin. the GPCC.daily.nc does not have
 % dimensions 'gridcell' x 'nele', those dimensions came from the
-% MOSART_icom_half_c200624.nc file in mydata/e3sm/input/icom, and I must
+% MOSART_icom_half_c200624.nc file in data/e3sm/input/icom, and I must
 % have just copied the idea over to the runoff file to see if it would work
 
 %% set paths
-p.data  = setpath('interface/data/hillsloper/');
-p.temp  = '/Users/coop558/mydata/e3sm/input/icom/';
-p.forc  = '/Users/coop558/mydata/e3sm/forcing/lnd/dlnd7/hcru_hcru/';
-p.save  = '/Users/coop558/myprojects/e3sm/sag/input/';
+pathdata = setpath(['interface/hillsloper/' sitename],'data');
+pathtemp = getenv('USER_MOSART_TEMPLATE_PATH');
+pathroff = setpath('e3sm/compyfs/inputdata/lnd/dlnd7/hcru_hcru','data');
 
-cd(p.save);
+% normally would save here, but for comparing with mos_makerunoff, set below
+% pathsave = setpath('e3sm/forcing/sag_basin/','data');
+pathsave = getenv('USER_MOSART_TEMPLATE_PATH'); cd(pathsave);
 
-fmosart     = [p.temp 'MOSART_icom_half_c200624.nc'];
-frunoff     = [p.forc 'GPCC.daily.nc'];
-fsave       = [p.save 'runoff_sag_test.nc'];
+% fmosart isn't used but keep for now, I probably wanted to compare the var
+% sizes/shapes to frunoff, see info_mos below
+fmosart = fullfile(pathtemp,'MOSART_icom_half_c200624.nc');
+frunoff = fullfile(pathroff,'GPCC.daily.nc');
+fsave   = fullfile(pathsave,'runoff_sag_test.nc');
 
 if exist(fsave,'file'); delete(fsave); end
 
-
 %% load the hillsloper data that has ID and dnID
-load([p.data 'sag_hillslopes']); slopes = newslopes; clear newslopes;
 
-sagvars     = fieldnames(slopes);
-ID          = [slopes.ID];
-dnID        = [slopes.dnID];
+load(fullfile(pathdata,'mosart_hillslopes'),'mosartslopes');
+
+sagvars     = fieldnames(mosartslopes);
+ID          = [mosartslopes.ID];
+dnID        = [mosartslopes.dnID];
 i           = isnan(dnID);
 dnID(i)     = -9999;                    % replace nan with -9999
-lat         = [slopes.lat];
-lon         = [slopes.lon];
+lat         = [mosartslopes.lat];
+lon         = [mosartslopes.lon];
 lon         = wrapTo360(lon);
 ncells      = length(lon);
 
@@ -44,7 +71,7 @@ R           = permute(data.QRUNOFF,[2,1,3]);
 [LON,LAT]   = meshgrid(data.lon,data.lat);
 LAT         = flipud(LAT);
 R           = flipud(R);
-Ravg        = nanmean(R,3);
+Ravg        = mean(R,3,'omitnan');
 [nr,nc]     = size(LON);
 
 % reshape to columns for griddedInterpolant
@@ -135,6 +162,31 @@ ncwriteschema(fsave,sch);
 ncwrite(fsave,var,lon);
 
 newinfo = ncinfo(fsave);
+
+
+%% TEST make file using new function
+
+fdomain = '/Users/coop558/work/data/e3sm/config/domain_sag_basin_gridded.nc';
+fsave   = fullfile(pathsave,'runoff_sag_test_func.nc');
+
+opts.inputGridded = true;
+opts.outputGridded = false;
+opts.save_file = true;
+
+[schema,info,data] = mos_makerunoff(mosartslopes,frunoff,fdomain,fsave,opts);
+
+d1 = ncreaddata('runoff_sag_test.nc');
+d2 = ncreaddata('runoff_sag_test_func.nc');
+
+comp = compareMosartFiles('runoff_sag_test.nc','runoff_sag_test_func.nc');
+
+% the two files are different in terms of the size of the variables also d1 has
+% the ID field but d2 doesn't and likely doesn't need it
+
+isequal(transpose(d1.QDRAI),squeeze(d2.QDRAI))
+isequal(transpose(d1.QOVER),squeeze(d2.QOVER))
+isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
+
 
 %% this shows the discrepancy between scatteredInterpolant and interp2
 % interpolate the GPCC runoff to the sag basin lat/lon

@@ -1,78 +1,29 @@
 clean
 
-%% set paths
-pathdata = '/Users/coop558/work/data/e3sm/templates/';
-pathsave = '/Users/coop558/work/data/e3sm/config/';
-pathhslp = getenv('USER_HILLSLOPER_DATA_PATH');
-% pathsag  = setpath('interface/data/hillsloper/sag_basin/');
-cd(pathsave)
+sitename = 'trib_basin_test';
 
-%% load the hillsloper data
-% load([pathhslp 'sag_hillslopes']); slopes = newslopes; clear newslopes;
-load(fullfile(pathhslp,'mosart_hillslopes'));
-slopes          = mosartslopes; clear mosartslopes
-sagvars         = fieldnames(slopes);
-i               = isnan([slopes.dnID]);
-slopes(i).dnID  = -9999;                    % replace nan with -9999
+% set the options
+opts = const('savefile',true,'sitename',sitename);
 
-%% read in icom files to use as a template
-% see sftp://compy.pnl.gov/compyfs/inputdata/rof/mosart/
-fmosart = [pathdata 'MOSART_icom_half_c200624.nc'];
-fsave   = [pathsave 'MOSART_sag_test.nc'];
+% set paths
+path_domain_data = getenv('USER_HILLSLOPER_DATA_PATH');
+path_domain_file_template = getenv('USER_MOSART_TEMPLATE_PATH');
+path_mosart_file_save = getenv('USER_E3SM_CONFIG_PATH');
 
-% if exist(fsave,'file'); delete(fsave); end
+% load the hillsloper data
+load(fullfile(path_domain_data,'mosart_hillslopes'),'mosartslopes');
 
-%% mosart file (frivinp_rtm)
-info    = ncparse(fmosart);
-vars    = [info.Name];
-nvars   = length(vars);
-ncells  = length(slopes);
+% ftemp is used as a template to get the right .nc file format
+ftemp = fullfile(path_domain_file_template,'MOSART_icom_half_c200624.nc');
+fsave = fullfile(path_mosart_file_save,['MOSART_' sitename '.nc']);
 
-for i = 1:nvars
-    vari = vars(i);
-    myschema.(vari)             = ncinfo(fmosart,vari);
-    irep                        = myschema.(vari).Size == 72;
-    myschema.(vari).Size(irep)  = ncells;
-    irep                        = [myschema.(vari).Dimensions.Length] == 72;
-    myschema.(vari).Dimensions(irep).Length = ncells;
-end
+% write the file
+[schema,info,data] = mos_makemosart(mosartslopes,ftemp,fsave,opts);
+cd(p.save)
 
-%% make the 'ele' array and reset rwid to 50
-nele    = 11;
-ele     = nan(nele,ncells);
+% for template files see sftp://compy.pnl.gov/compyfs/inputdata/rof/mosart/
 
-for i = 1:length(slopes)
-    ele(:,i)        = slopes(i).ele;
-    slopes(i).rwid  = 50;
-    slopes(i).fdir  = double(slopes(i).fdir);
-end
-ele = ele';
-
-for i = 1:length(slopes)
-    slopes(i).ele   = ele;
-end
-
-% this is incorrect. area should be in km2.
-%% convert area from km2 to m2 (should have done this in make_newslopes)
-% for i = 1:length(slopes)
-%     slopes(i).area          = slopes(i).area.*1e6;
-%     slopes(i).areaTotal     = slopes(i).areaTotal.*1e6;
-%     slopes(i).areaTotal0    = [slopes(i).areaTotal0].*1e6;
-%     slopes(i).areaTotal2    = slopes(i).areaTotal2.*1e6;
-% end
-
-%% loop through the remaining variable and replicate don's format
-
-for i = 1:nvars-1
-    vari    = vars(i);
-    isag    = find(ismember(sagvars,vari));
-    sagvar  = sagvars{isag};
-    ncwriteschema(fsave,myschema.(vari));
-    ncwrite(fsave,vars{i},[slopes.(sagvar)]);
-end
-
-ncwriteschema(fsave,myschema.ele);
-ncwrite(fsave,'ele',ele);
-
-newinfo.mosart  = ncinfo(fsave);
-
+% % older version
+% path_domain_data = setpath(['interface/data/sag/hillsloper/' sitename '/newslopes/']);
+% path_domain_file_template = setpath('e3sm/input/icom/','data');
+% path_mosart_file_save = setpath(['/e3sm/sag/input/gridded/' sitename],'project');
