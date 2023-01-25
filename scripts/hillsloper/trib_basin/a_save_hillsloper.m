@@ -1,20 +1,29 @@
 clean
 
-save_data   = true;
-plot_map    = 0;
-pathdata    = '/Users/coop558/mydata/e3sm/sag/hillsloper/IFSAR_hillslopes/';
-pathtopo    = '/Users/coop558/mydata/e3sm/topo/topo_toolbox/flow_network/basin/';
-pathsave    = setpath('interface/data/hillsloper/sag_basin/');
+savedata = true;
+plotmap  = true;
+plotgeo  = false;
+
+pathdata = '/Users/coop558/mydata/interface/sag_basin/hillsloper/trib_basin/';
+pathsave = setpath('interface/data/sag/hillsloper/trib_basin/newslopes/');
 
 warning('off') % so polyshape stops complaining
 
+% note: this needs the DEM to be in planar coordinates to compute the area
+% of each hillslope, otherwise it would work with a geo dem i think
+
+% this is an initial save of the data to get it into a useable form,
+% additional work is needed to get it ready for mosart, which is done in
+% b_make_newslopes
+
+
 %% read in the data
 
-list        = dir(fullfile([pathdata '*.shp']));
+list        = getlist(pathdata,'*.shp'); {list.name}'
 info        = shapeinfo([pathdata list(1).name]);
 slopes      = shaperead([pathdata list(1).name]);
-links       = shaperead([pathdata list(3).name]); % new sf w/hs_id
-nodes       = shaperead([pathdata list(4).name]);
+links       = shaperead([pathdata list(2).name]); % new sf w/hs_id
+nodes       = shaperead([pathdata list(3).name]);
 
 Nnodes      = length(nodes);
 Nlinks      = length(links);
@@ -24,17 +33,15 @@ Nslopes     = length(slopes);
 % this takes forever so do it here once
 
 
-% load IfSAR dem and calculate slope
-% load([pathtopo 'sag_dems'],'R','Z');      % 5 m dem, for plotting
-% [~,slope]   = gradientm(Z,R);           % only works with geo coords
-
 % use topo toolbox instead
-fname       = 'IfSAR_5m_DTM_Alaska_Albers_Sag_basin.tif';
-fname       = ['/Users/coop558/mydata/e3sm/topo/' fname];
+activate topotoolbox
+fname       = [pathdata 'Sag_gage_HUC_filled.tif'];
 DEM         = GRIDobj(fname);           % elevation
+DEM.georef.SpatialRef.ProjectedCRS = info.CoordinateReferenceSystem;
 G           = gradient8(DEM);           % slope
 [~,R]       = readgeoraster(fname);     % spatial referencing
 res         = R.CellExtentInWorldX;
+
 % i used this to confirm that bbox in slopes is compatible with bbox2R
 % bbox        = mapbbox(R,R.RasterSize(1),R.RasterSize(2));
 
@@ -48,16 +55,22 @@ for i = 1:length(slopes)
     % this is MUCH faster than inpolygon if a coarser res is used to query
     % the dem, with ~no impact on accuracy, since we're taking the mean.
     % If res=5, it gives identical results as inpolygon w/o coarsening
-    bbox       = hs.BoundingBox;
-    Rhs        = bbox2R(bbox,res*5);       
-    [xhs,yhs]  = R2grid(Rhs);
-
-    xhs     = reshape(xhs,size(xhs,1)*size(xhs,2),1);
-    yhs     = reshape(yhs,size(yhs,1)*size(yhs,2),1);
-    inhs    = inpolygon(xhs,yhs,x,y);
-    helev   = roundn(mean(mapinterp(DEM.Z,R,xhs(inhs),yhs(inhs),'linear'),'omitnan'),0);
-    hslp    = roundn(mean(mapinterp(G.Z,R,xhs(inhs),yhs(inhs),'linear')),-4);
-    harea   = roundn(area(hspoly),0);
+    bbox        = hs.BoundingBox;
+    Rhs         = bbox2R(bbox,res*5);       
+    [xhs,yhs]   = R2grid(Rhs);
+    xhs         = reshape(xhs,size(xhs,1)*size(xhs,2),1);
+    yhs         = reshape(yhs,size(yhs,1)*size(yhs,2),1);
+    inhs        = inpolygon(xhs,yhs,x,y);
+    
+    if strcmp(R.CoordinateSystemType,'geographic')
+        helev       = roundn(nanmean(geointerp(DEM.Z,R,yhs(inhs),xhs(inhs),'linear')),0);
+        hslp        = roundn(nanmean(geointerp(G.Z,R,yhs(inhs),xhs(inhs),'linear')),-4);
+        harea       = roundn(area(hspoly),0);
+    else
+        helev       = roundn(nanmean(mapinterp(DEM.Z,R,xhs(inhs),yhs(inhs),'linear')),0);
+        hslp        = roundn(nanmean(mapinterp(G.Z,R,xhs(inhs),yhs(inhs),'linear')),-4);
+        harea       = roundn(area(hspoly),0);
+    end
     
     if isnan(helev) || isnan(hslp) % set the resolution back to 5
         Rhs         = bbox2R(bbox,res);       
@@ -65,8 +78,8 @@ for i = 1:length(slopes)
         xhs         = reshape(xhs,size(xhs,1)*size(xhs,2),1);
         yhs         = reshape(yhs,size(yhs,1)*size(yhs,2),1);
         inhs        = inpolygon(xhs,yhs,x,y);
-        helev       = roundn(mean(mapinterp(DEM.Z,R,xhs(inhs),yhs(inhs),'linear'),'omitnan'),0);
-        hslp        = roundn(mean(mapinterp(G.Z,R,xhs(inhs),yhs(inhs),'linear'),'omitnan'),-4);
+        helev       = roundn(nanmean(mapinterp(DEM.Z,R,xhs(inhs),yhs(inhs),'linear')),0);
+        hslp        = roundn(nanmean(mapinterp(G.Z,R,xhs(inhs),yhs(inhs),'linear')),-4);
         harea       = roundn(area(hspoly),0);
     end
     % what this does is build a bounding box around the hillslope, then
@@ -152,9 +165,16 @@ end
 N = Nlinks;
 V = {'us_node_id','ds_node_id','ds_da_km2','us_da_km2','slope','len_km','hs_id'};
 for i = 1:length(V)
-    vi                  = V{i};
-    di                  = num2cell(cellfun(@str2double,{links.(vi)}));
-    [links(1:N).(vi)]   = di{:};
+    vi = V{i};
+    di = {links.(vi)};
+    if strcmp(vi,'hs_id')
+        for j = 1:length(di)
+            [links(j).(vi)] = str2double(strsplit(di{j},','));
+        end
+    else 
+        di                  = num2cell(cellfun(@str2double,{links.(vi)}));
+        [links(1:N).(vi)]   = di{:};
+    end
 end
 
 % nodes is more complicated, because some fields have multiple values
@@ -170,18 +190,19 @@ end
 
 % plot using mapshow
 
-if plot_map == true
+if plotmap == true 
 nodespec    = makesymbolspec('Point',{'Default','Marker','o','MarkerSize', ...
                 6,'MarkerFaceColor','g','MarkerEdgeColor','none'});
 linkspec    = makesymbolspec('Line',{'Default','Color','b','LineWidth',1});
 figure;
+mapshow(slopes); hold on;
 mapshow(links,'SymbolSpec',linkspec); hold on
 mapshow(nodes,'SymbolSpec',nodespec);
 end
 
 % plot using worldmap
 
-if plot_map == true
+if plotgeo == true
 latlims     = [min(LATnodes) max(LATnodes)];
 lonlims     = [min(LONnodes) max(LONnodes)];
 
@@ -192,9 +213,79 @@ end
 
 %% save the data
 
-if save_data == true
+if savedata == true
     save([pathsave 'sag_hillslopes'],'slopes','links','nodes');
 end
+
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
+% below here was a script i started before realling the workflow i had set
+% up ... i wrote the one below from the mosart/preprocess folder then
+% remembered that the hillsloper processing was in the hillsloper folder so
+% i moved that one into the mosart folder to avoid confusion later
+
+% clean
+% 
+% % started this feb 2022 to build an input file for the huc 12, few things
+% % to note: there are scripts here and there are scripts itn eh mosart
+% % preprocess folder, bit confusing to hvae them spread out. the 'hs_id'
+% % field is the key, and i don't think i got that for the huc 12 from jon
+% 
+% save_data   = false;
+% plot_map    = false;
+% path.data   = ['/Users/coop558/mydata/interface/sag_basin/hillsloper/' ...
+%                     'old/hillsloper-master-4/Data/huc_190604020404/'];
+%                 
+% % read the data
+% slopes      = shaperead([path.data 'huc_190604020404_hillslopes.shp']);
+% nodes       = shaperead([path.data 'huc_190604020404_nodes.shp']);
+% links       = shaperead([path.data 'huc_190604020404_links.shp']);
+% 
+% slopes      = renameStructField2(slopes,'X','Lon');
+% slopes      = renameStructField2(slopes,'Y','Lat');
+% nodes       = renameStructField2(nodes,'X','Lon');
+% nodes       = renameStructField2(nodes,'Y','Lat');
+% links       = renameStructField2(links,'X','Lon');
+% links       = renameStructField2(links,'Y','Lat');
+% 
+% figure; 
+% geoshow(slopes); hold on; 
+% geoshow(links)
+% geoshow(nodes);
+% 
+% % [newlinks,inlet_ID,outlet_ID] = mos_make_newlinks(links,nodes);
+% 
+% N = length(links);
+% V = {'us_node_id','ds_node_id','ds_da_km2','us_da_km2','slope','len_km'};
+% for i = 1:length(V)
+%     vi                  = V{i};
+%     di                  = num2cell(cellfun(@str2double,{links.(vi)}));
+%     [links(1:N).(vi)]   = di{:};
+% end
+% 
+% % nodes is more complicated, because some fields have multiple values
+% N = length(nodes); V = {'hs_id','conn','da_km2'};
+% for i = 1:length(V)
+%     di = {nodes.(V{i})};
+%     for j = 1:length(di)
+%         [nodes(j).(V{i})] = str2double(strsplit(di{j},','));
+%     end
+% end
+
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
+
+
+
+
+
+
+
+
 
 
 % for reference, this is the method that used inpolygon

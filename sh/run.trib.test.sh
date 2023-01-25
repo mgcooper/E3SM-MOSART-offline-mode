@@ -5,7 +5,7 @@ SITE_NAME='trib_basin'
 RUN_ID='ats' 													# 'ats' or 'pan'
 START_YEAR=1997
 END_YEAR=2003
-# (( NUM_YEARS=END_YEAR-START_YEAR+1 )) # let NUM_YEARS=END_YEAR-START_YEAR
+(( NUM_YEARS=END_YEAR-START_YEAR+1 )) # let NUM_YEARS=END_YEAR-START_YEAR
 DLND_DIR=/qfs/people/coop558/data/e3sm/usrdat
 DLND_FILE=user_dlnd.streams.txt.lnd.gpcc.${RUN_ID}.${SITE_NAME}
 # DLND_FILE=user_dlnd.streams.txt.lnd.gpcc.pan 					# the mingpan runoff prepared by tian, in gridded format
@@ -50,10 +50,8 @@ cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
 # modify env_run.xml
 ./xmlchange -file env_run.xml -id DOUT_S             	-val FALSE
 ./xmlchange -file env_run.xml -id INFO_DBUG          	-val 2
-./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_START -val 1997
-./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_END 	-val 2003
-# ./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_START -val ${START_YEAR}
-# ./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_END 	-val ${END_YEAR}
+./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_START -val ${START_YEAR}
+./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_END 	-val ${END_YEAR}
 
 # I might need to change DLND_CPLHIST_YR_START to start_year - 1, rather than start_year, and use the yr_align option
 # ./xmlchange DATM_CLMNCEP_YR_START=1979
@@ -61,11 +59,9 @@ cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
 # ./xmlchange DATM_CLMNCEP_YR_ALIGN=1
 
 # modify env_build.xml
-# ./xmlchange STOP_N=${NUM_YEARS}
-./xmlchange STOP_N=7
+./xmlchange STOP_N=${NUM_YEARS}
 ./xmlchange STOP_OPTION=nyears
-# ./xmlchange RUN_STARTDATE=${START_YEAR}-01-01
-./xmlchange RUN_STARTDATE=1997-01-01
+./xmlchange RUN_STARTDATE=${START_YEAR}-01-01
 ./xmlchange CLM_USRDAT_NAME=test_r05_r05
 ./xmlchange JOB_QUEUE=short
 ./xmlchange DEBUG=FALSE
@@ -81,7 +77,7 @@ cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
 # ./xmlchange -file env_run.xml -id JOB_QUEUE # format is DD:HH:MM
 
 # this puts the text between << EOF and EOF into user_nl_mosart file even if it doesn't exist
-fmosart=/qfs/people/coop558/data/e3sm/config/MOSART_${SITE_NAME}.nc
+fmosart=/qfs/people/coop558/data/e3sm/config/MOSART_${SITE_NAME}_test.nc
 cat >> user_nl_mosart << EOF
 frivinp_rtm = '$fmosart'
 rtmhist_fincl2="RIVER_DISCHARGE_OVER_LAND_LIQ"

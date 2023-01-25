@@ -23,4 +23,5 @@ setenv('USER_MOSART_RUNOFF_PATH', '/Users/coop558/work/data/e3sm/forcing');
 % set path to domain/mosart config files
 setenv('USER_E3SM_CONFIG_PATH', '/Users/coop558/work/data/e3sm/config');
 
+setenv('MOSART_TESTBED', fullfile(pwd,'testbed'));
 % [keys,vals] = getuserpaths;

@@ -6,7 +6,8 @@
 # ------------------------------------------------------------
 # copy E3SM output 
 # ------------------------------------------------------------
-SRCPATH=$COMPY_SCRATCH_PATH/trib_basin.1997.2003.run.2022-11-22.ats
+run_name=trib_basin.1997.2003.run.2023-01-25-10-32.ats
+SRCPATH=$COMPY_SCRATCH_PATH/$run_name
 DSTPATH=$E3SM_OUTPUT_PATH
 
 # this will create the directory at the end of SRCPATH in DSTPATH
@@ -19,6 +20,7 @@ rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
 # copy the sag run script to this directory:
 # ------------------------------------------------------------
 # SRCNAME=run.trib.sh
+# SRCNAME=run.trib.test.sh
 # SRCPATH=$COMPY_ROOT_PATH/qfs/people/coop558/projects/e3sm/sag/scripts/$SRCNAME
 # DSTPATH=$(pwd)/$SRCNAME
 # rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"

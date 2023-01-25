@@ -1,19 +1,19 @@
 clean
 
-save_data   = true;
-plot_map    = false;
+savedata   = true;
+plotmap    = false;
 
 % see notes at end
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% set paths and read in the data
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-p.data = setpath('interface/data/sag/hillsloper/sag_basin/');
-p.save = setpath('interface/data/sag/hillsloper/sag_basin/');
-p.topo = '/Users/coop558/mydata/e3sm/topo/topo_toolbox/flow_network/basin/';
-load([p.data 'sag_hillslopes']);
+
+pathdata = setpath('interface/data/sag/hillsloper/sag_basin/');
+pathsave = setpath('interface/data/sag/hillsloper/sag_basin/');
+pathtopo = '/Users/coop558/mydata/e3sm/topo/topo_toolbox/flow_network/basin/';
+load([pathdata 'sag_hillslopes']);
 
 % only needed for plotting
-% load([p.topo 'sag_dems'],'R5','Z5');    % 160 m dem, for plotting
+% load([pathtopo 'sag_dems'],'R5','Z5');    % 160 m dem, for plotting
 % R = R5; Z = Z5; clear R5 Z5
 
 
@@ -21,9 +21,9 @@ max([newlinks.us_da_km2])*1000*1000
 
 find(max([newlinks.us_da_km2])==[newlinks.us_da_km2])
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% Step 1: make a newlinks table with upstream/downstream link connectivity
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 [newlinks,inlet_ID,outlet_ID] = make_newlinks(links,nodes);
 
 % definitions
@@ -31,9 +31,9 @@ find(max([newlinks.us_da_km2])==[newlinks.us_da_km2])
 % us_hs_id      = hillslopes upstream of the upstream node
 % ds_hs_id      = hillslopes upstream of the downstream node
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% Step 2: Custom fixes to orphan links
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 % Step 2: fix orphan links and nodes (detailed notes are in _test_rmlink)
 % links 199 and 1396 flow to 1394 instead of 1274
@@ -70,8 +70,8 @@ rp_link     = 2682;
 us_link     = [178, 1323];  % find these in us_conn_ID
 ds_link     = 2681;         % find these in ds_conn_ID 
 slope_flag  = false;
-newlinks    = remove_link   ...
-            (   newlinks,   ...
+newlinks    = remove_link(  ...
+                newlinks,   ...
                 rm_link,    ...
                 us_link,    ...
                 ds_link,    ...
@@ -90,9 +90,9 @@ newlinks    = remove_link   ...
 % newlinks(idx3)
 % newlinks(idx4)  % should not have any rm_link values, us_link_ID = rp_link
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% Step 3: Remove orphan slopes (merge slope 1843 with slope 2010)
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 % first, remove unneccesary fields
 % slopes      = rmfield(slopes,{'link_id','outlet_idx','bp','endbasin'});
@@ -109,9 +109,9 @@ newslopes   = remove_slopes(slopes,rm_slope,rp_slope,rp_flag);
 % length(unique([newlinks.link_ID]))
 % length(unique([newslopes.hs_id]))/2
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% Step 4: renumber the ID field to go from 1 -> # slopes
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % test - renumber hillslopes to be consecutive
 IDs         = [newlinks.link_ID];
 dnIDs       = [newlinks.ds_link_ID];
@@ -152,9 +152,9 @@ for i = 1:length(IDs)
     newlinks(i).ds_link_ID  = dnIDs(i);
 end
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% Step 5: build a table with the MOSART input file information
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 % modify the mosart_hillslopes to be a mapstruct
 proj    = projcrs(3338,'Authority','EPSG');
@@ -253,16 +253,16 @@ end
 % reassign the structure name
 mosart_hillslopes   = mos; clear mos;
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% save the data
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-if save_data == true
-    save([p.save 'mosart_hillslopes'],'mosart_hillslopes','newlinks','newslopes');
+
+if savedata == true
+    save([pathsave 'mosart_hillslopes'],'mosart_hillslopes','newlinks','newslopes');
 end
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% notes to keep, until sorted out
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % this is based on make_newslopes_test, which is a slightly cleaned-up
 % version of make_newslopes, which was left in some disarray after trying
 % to convert Jon's hillsloper output to mosart input format 
@@ -284,9 +284,9 @@ end
 % hillslope in which each link exists, and its ds link, I should be able to
 % piece it together
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% plot the nodes and label them
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % % jitter for the labels
 % jitx        = (R.XWorldLimits(2)-R.XWorldLimits(1))/80;
 % jity        = (R.YWorldLimits(2)-R.YWorldLimits(1))/80;
@@ -331,9 +331,9 @@ end
 %     text(nx,ny,nid,'Color','r','FontSize',12);
 % end
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% The next two plots are for checking the algorithm
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 % if plot_check == true
 % 
@@ -377,9 +377,9 @@ end
 %     end
 % end
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% plot the nodes
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 % this is extremely slow with the entire sag basin
 
@@ -443,9 +443,9 @@ end
 % % end
 % end
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %% below here is mostly testing to sort out the links
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % %     the us_hs_id for a given link is actually the us_hs_id for the
 % %     us_link, so if I have a link and the ds link, i can go to the ds
 % %     link, get the us-hs-id and put that with the link ... not sure why i
@@ -490,9 +490,9 @@ end
 
 %     the problem is that the link ID 
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 %%
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % commenting this out for now
 % newlinks    = rmfield(newlinks,{'id','ds_node_id','us_node_id'});
 
@@ -504,7 +504,7 @@ end
 % newlinksT   = struct2table(newlinks);
 % newlinksT   = movevars(newlinksT,'link_dnID','After','link_ID');
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 % % I think at this point the challenge is identifying the headwater reaches
 % % and assigning the correct hillslopes to each link
 % 

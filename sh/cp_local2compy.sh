@@ -34,3 +34,12 @@ filename=run.trib.sh
 SRCPATH=$(pwd)/$filename
 DSTPATH=$COMPY_ROOT_PATH/qfs/people/coop558/projects/e3sm/sag/scripts/$filename
 rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
+
+# ------------------------------------------------------------
+# COPY THE MOSART CONFIG SCRIPT FROM LOCAL TO COMPY
+# ------------------------------------------------------------
+
+# filename=MOSART_trib_basin_test.nc
+# SRCPATH=/Users/coop558/work/data/e3sm/config/$filename
+# DSTPATH=$COMPY_ROOT_PATH/qfs/people/coop558/data/e3sm/config/$filename
+# rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
