@@ -1,27 +1,69 @@
-function Config()
+function Config(varargin)
 % CONFIG set user configuration, environment variables, etc.
 % 
 %  See also Setup
 
 % set environment variables to find data
 
+thispath = fileparts(mfilename('fullpath'));
+
+% root path where data exists
+setenv('USER_DATA_PATH', ...
+   '/Users/coop558/work/data' ...
+   );
+
+% path to mosart template files
+setenv('USER_MOSART_TEMPLATE_PATH', ...
+   '/Users/coop558/work/data/e3sm/templates' ...
+   );
+
+% path to runoff forcing files
+setenv('USER_MOSART_RUNOFF_PATH', ...
+   '/Users/coop558/work/data/e3sm/forcing' ...
+   );
+
+% path to domain/mosart config files
+setenv('USER_E3SM_CONFIG_PATH', ...
+   '/Users/coop558/work/data/e3sm/config' ...
+   );
+
+% testbed folder ignored by git (see .git/info/exclude)
+setenv('MOSART_TESTBED', ...
+   fullfile( ...
+   thispath,'testbed') ...
+   );
+
+% [keys,vals] = getuserpaths;
+
+
+% -------- INTERFACE CONFIG -------- 
+
+% Note: rather than append subdirs to getenv('USER_DATA_PATH'), all paths below
+% here are defined explicitly for clarity. 
+
+% ATS output version
+setenv('USER_ATS_VERSION', ...
+   'huc0802_gauge15906000_nopf' ...
+   );
+
 % path to ATS runoff data
-setenv('USER_ATS_DATA_PATH',[getenv('USERDATAPATH') 'interface/ATS']);
+setenv('USER_ATS_DATA_PATH', ...
+   '/Users/coop558/work/data/interface/ATS' ...
+   );
 
 % path to HILLSLOPER data files
-setenv('USER_HILLSLOPER_DATA_PATH',[getenv('USERDATAPATH') 'interface/hillsloper/trib_basin/newslopes'])
+setenv('USER_HILLSLOPER_DATA_PATH', ...
+   '/Users/coop558/work/data/interface/hillsloper/trib_basin/newslopes' ...
+   );
 
-% path to MOSART template files
-% setenv('USER_MOSART_TEMPLATE_PATH',[getenv('USERDATAPATH') 'interface/ATS/'])
+% path to hexwatershed mesh file (used to define the mosart domain)
+setenv('USER_MOSART_DOMAIN_DATA_PATH', ...
+   getenv('USER_HILLSLOPER_DATA_PATH') ...
+   );
 
-% need to organzie this
-setenv('USER_MOSART_TEMPLATE_PATH','/Users/coop558/work/data/e3sm/templates')
+% % path to MOSART template files
+% setenv('USER_MOSART_TEMPLATE_PATH', ...
+%    '/Users/coop558/work/data/interface/ATS/' ...
+%    );
 
-% path to runoff files
-setenv('USER_MOSART_RUNOFF_PATH', '/Users/coop558/work/data/e3sm/forcing');
 
-% set path to domain/mosart config files
-setenv('USER_E3SM_CONFIG_PATH', '/Users/coop558/work/data/e3sm/config');
-
-setenv('MOSART_TESTBED', fullfile(pwd,'testbed'));
-% [keys,vals] = getuserpaths;
