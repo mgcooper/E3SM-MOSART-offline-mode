@@ -1,106 +1,90 @@
 clean
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-%%      set paths
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%% set the options
 
-% set paths
-path_domain_data           = '../data/hillsloper/';
-path_domain_file_template  = '../data/templates/icom/';
-path_mosart_file_save      = ['../data/e3sm-input/gridded/' sitename '/'];
+opts = const( ...
+   'save_file',true,...
+   'sitename','trib_basin',...
+   'runID','huc0802_gauge15906000_nopf',...
+   'farea','huc0802_gauge15906000_nopf_subcatch_area.csv',...
+   'ftemplate','domain_u_icom_half_sparse_grid_c200610.nc',...
+   'testplot',true);
 
-% path.data   = '/Users/coop558/mydata/e3sm/domain_files/icom_template/';
-% path.save   = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
-% path.sag    = setpath('interface/data/hillsloper/sag_basin/');
-% cd(path.save)
+sitename = opts.sitename;
 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-%%      Load the hillsloper data and modify it for MOSART 
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+%% set paths
 
-load([path_domain_data 'mosart_hillslopes']);
-slopes = mosart_hillslopes; clear mosart_hillslopes
+path_domain_data = ...
+   getenv('USER_HILLSLOPER_DATA_PATH');
 
-% to compute the surface area of each sub-basin in units of steradians
-Aearth  = 510099699070762;       % m2, this is earth area defined in E3SM
-% Aearth  = 510065621724089;     % this is the area i used in other functions
+path_domain_file_template = ...
+   getenv('USER_MOSART_TEMPLATE_PATH');
 
-% assign values to each variable
-xc      = [slopes.longxy]';
-yc      = [slopes.latixy]';
-mask    = (int32(ones(size([slopes.longxy]))))';
-frac    = (ones(size([slopes.longxy])))';
-ncells  = size(mask,1);
-area    = ([slopes.area].*4.*pi./Aearth)';      % sr
+path_mosart_file_save = ...
+   getenv('USER_E3SM_CONFIG_PATH');
 
-% sum(area)
-% sum([slopes.area])
-% 12961625875
+path_area_file = ...
+   getenv('USER_ATS_DATA_PATH');
 
-% compute the bounding box of each sub-basin
-for n = 1:length(slopes)
-    bbox        = slopes(n).bbox;
-    xbox        = bbox(:,1);
-    ybox        = bbox(:,2);
-    xv(:,n)     = [xbox(1) xbox(2) xbox(2) xbox(1)]; % ll ccw
-    yv(:,n)     = [ybox(1) ybox(1) ybox(2) ybox(2)];
+%% set filenames
+
+% fdomain is used as a template to get the right .nc file format
+fname_domain = ...
+   fullfile(...
+   path_domain_file_template,opts.ftemplate);
+
+% farea is an optional file 
+fname_area_file = ...
+   fullfile( ...
+   path_area_file,opts.runID,opts.farea);
+
+% fsave is the domain file created by this script
+fname_save = ...
+   fullfile( ...
+   path_mosart_file_save,['domain_' sitename '.nc']);
+
+%% load the hillsloper data that has ID and dnID and prep it for MOSART
+
+load( ...
+   fullfile(path_domain_data,'mosart_hillslopes.mat'),'mosartslopes');
+
+%% TEST
+
+% compare the area in the area file to the hillsloper areas
+A = readfiles(fname_area_file); 
+
+% sum(A.area_m2_)/sum([slopes.area]) 1.16
+% sum([slopes.area]) trib: 73818500, sag (?) 12961625875
+
+%% write the file
+[schema,info,data] = ...
+   mosartMakeDomainFile(mosartslopes,fname_domain,fname_save,opts);
+
+% go to the ouput folder 
+cd(path_mosart_file_save)
+
+% not sure what this was, maybe plot the boxes around each node 
+if opts.test_plot
+   macfig
+   for n = 1:data.xc
+      if isfield(data,'xv')
+         plot(data.xv(:,n),data.yv(:,n)); hold on;
+      end
+      myscatter(data.xc(n),data.yc(n),80); hold on;
+      pause
+   end
 end
 
-%==========================================================================
-%% 2. read in icom files to use as a template, and write the new file
-%==========================================================================
 
-fdomain     = 'domain_u_icom_half_sparse_grid_c200610.nc';
-fdomain     = [path_domain_file_template fdomain];
+% compare with the one produced by mk_huc_domain 
+ftest = '/Users/coop558/work/data/e3sm/config/domain_trib_test.nc';
+fcomp = compareMosartFiles(fname_save,ftest);
 
-fsave       = [path.save 'domain_sag_test.nc'];
+% says xc not equal
+d1 = ncreaddata(fname_save);
+d2 = ncreaddata(ftest);
 
-if exist(fsave,'file'); delete(fsave); end
+isequal(d1.xc,wrapTo360(d2.xc))
+figure; scatterfit(d1.xc,wrapTo360(d2.xc))
 
-myschema.xc     = ncinfo(fdomain,'xc');
-myschema.yc     = ncinfo(fdomain,'yc');
-myschema.xv     = ncinfo(fdomain,'xv');
-myschema.yv     = ncinfo(fdomain,'yv');
-myschema.mask   = ncinfo(fdomain,'mask');
-myschema.area   = ncinfo(fdomain,'area');
-myschema.frac   = ncinfo(fdomain,'frac');
 
-% modify the size to match the sag domain
-myschema.xc.Size    = [ncells,1];
-myschema.yc.Size    = [ncells,1];
-myschema.xv.Size    = [4,ncells,1];
-myschema.yv.Size    = [4,ncells,1];
-myschema.mask.Size  = [ncells,1];
-myschema.area.Size  = [ncells,1];
-myschema.frac.Size  = [ncells,1];
-
-myschema.xc.Dimensions(1).Length    = ncells;
-myschema.yc.Dimensions(1).Length    = ncells;
-myschema.xv.Dimensions(2).Length    = ncells;
-myschema.yv.Dimensions(2).Length    = ncells;
-myschema.mask.Dimensions(1).Length  = ncells;
-myschema.area.Dimensions(1).Length  = ncells;
-myschema.frac.Dimensions(1).Length  = ncells;
-
-ncwriteschema(fsave,myschema.xc);
-ncwriteschema(fsave,myschema.yc);
-ncwriteschema(fsave,myschema.xv);
-ncwriteschema(fsave,myschema.yv);
-ncwriteschema(fsave,myschema.mask);
-ncwriteschema(fsave,myschema.area);
-ncwriteschema(fsave,myschema.frac);
-
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% write the variable values
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ncwrite(fsave,'xc',xc);
-ncwrite(fsave,'yc',yc);
-ncwrite(fsave,'xv',xv);
-ncwrite(fsave,'yv',yv);
-ncwrite(fsave,'mask',mask);
-ncwrite(fsave,'area',area);
-ncwrite(fsave,'frac',frac);
-
-% read in the new file to compare with the old file                        
-%==========================================================================
-newinfo.domain  = ncinfo(fsave);

@@ -5,7 +5,7 @@ SITE_NAME='trib_basin'
 RUN_ID='ats' 													# 'ats' or 'pan'
 START_YEAR=1997
 END_YEAR=2003
-(( NUM_YEARS=END_YEAR-START_YEAR )) # let NUM_YEARS=END_YEAR-START_YEAR
+# (( NUM_YEARS=END_YEAR-START_YEAR+1 )) # let NUM_YEARS=END_YEAR-START_YEAR
 DLND_DIR=/qfs/people/coop558/data/e3sm/usrdat
 DLND_FILE=user_dlnd.streams.txt.lnd.gpcc.${RUN_ID}.${SITE_NAME}
 # DLND_FILE=user_dlnd.streams.txt.lnd.gpcc.pan 					# the mingpan runoff prepared by tian, in gridded format
@@ -20,7 +20,7 @@ MACH=compy
 COMPILER=intel
 PROJECT=esmd
 SRC_DIR=/qfs/people/coop558/source/unstructured/E3SM
-CASE_DIR=/qfs/people/coop558/projects/e3sm/cases
+CASE_DIR=/qfs/people/coop558/projects/e3sm/sag/cases
 
 # set case name
 CASE_NAME=${SITE_NAME}.${START_YEAR}.${END_YEAR}.run.$(date "+%Y-%m-%d").${RUN_ID}
@@ -28,11 +28,11 @@ CASE_NAME=${SITE_NAME}.${START_YEAR}.${END_YEAR}.run.$(date "+%Y-%m-%d").${RUN_I
 	
 # create a new case using ./create_newcase script
 cd ${SRC_DIR}/cime/scripts || exit
-	./create_newcase -case ${CASE_DIR}/${CASE_NAME} \
+	./create_newcase -case ${CASE_DIR}/"${CASE_NAME}" \
 		-res ${RES} -mach ${MACH} -compiler ${COMPILER} -compset ${COMPSET} --project ${PROJECT}	
 
 # go into the case folder
-cd ${CASE_DIR}/${CASE_NAME} || exit
+cd ${CASE_DIR}/"${CASE_NAME}" || exit
 
 # copy the user dland file
 cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
@@ -41,8 +41,8 @@ cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
 # ./xmlchange ELM_USRDAT_NAME=hcru_hcru
 ./xmlchange LND_DOMAIN_FILE=domain_${SITE_NAME}.nc
 ./xmlchange ATM_DOMAIN_FILE=domain_${SITE_NAME}.nc
-./xmlchange LND_DOMAIN_PATH=/qfs/people/coop558/data/e3sm/unstructured/sag/${SITE_NAME}
-./xmlchange ATM_DOMAIN_PATH=/qfs/people/coop558/data/e3sm/unstructured/sag/${SITE_NAME}
+./xmlchange LND_DOMAIN_PATH=/qfs/people/coop558/data/e3sm/config
+./xmlchange ATM_DOMAIN_PATH=/qfs/people/coop558/data/e3sm/config
 
 # modify env_mach_pes.xml
 ./xmlchange -file env_mach_pes.xml -id NTASKS -val 18
@@ -50,13 +50,22 @@ cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
 # modify env_run.xml
 ./xmlchange -file env_run.xml -id DOUT_S             	-val FALSE
 ./xmlchange -file env_run.xml -id INFO_DBUG          	-val 2
-./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_START -val ${START_YEAR}
-./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_END 	-val ${END_YEAR}
+./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_START -val 1997
+./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_END 	-val 2003
+# ./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_START -val ${START_YEAR}
+# ./xmlchange -file env_run.xml -id DLND_CPLHIST_YR_END 	-val ${END_YEAR}
+
+# I might need to change DLND_CPLHIST_YR_START to start_year - 1, rather than start_year, and use the yr_align option
+# ./xmlchange DATM_CLMNCEP_YR_START=1979
+# ./xmlchange DATM_CLMNCEP_YR_END=2010
+# ./xmlchange DATM_CLMNCEP_YR_ALIGN=1
 
 # modify env_build.xml
-./xmlchange STOP_N=${NUM_YEARS}
+# ./xmlchange STOP_N=${NUM_YEARS}
+./xmlchange STOP_N=7
 ./xmlchange STOP_OPTION=nyears
-./xmlchange RUN_STARTDATE=${START_YEAR}-01-01
+# ./xmlchange RUN_STARTDATE=${START_YEAR}-01-01
+./xmlchange RUN_STARTDATE=1997-01-01
 ./xmlchange CLM_USRDAT_NAME=test_r05_r05
 ./xmlchange JOB_QUEUE=short
 ./xmlchange DEBUG=FALSE
@@ -72,18 +81,15 @@ cp ${DLND_DIR}/${DLND_FILE} ./user_dlnd.streams.txt.lnd.gpcc
 # ./xmlchange -file env_run.xml -id JOB_QUEUE # format is DD:HH:MM
 
 # this puts the text between << EOF and EOF into user_nl_mosart file even if it doesn't exist
-fmosart=/qfs/people/coop558/data/e3sm/unstructured/sag/${SITE_NAME}/MOSART_${SITE_NAME}.nc
+fmosart=/qfs/people/coop558/data/e3sm/config/MOSART_${SITE_NAME}.nc
 cat >> user_nl_mosart << EOF
 frivinp_rtm = '$fmosart'
 rtmhist_fincl2="RIVER_DISCHARGE_OVER_LAND_LIQ"
-rtmhist_nhtfrq=-24
-rtmhist_mfilt=365
+rtmhist_nhtfrq=0,-24
+rtmhist_mfilt=1,365
 !wrmflag = .true.
 !inundflag = .true.
 !opt_elevprof = 1
-!rtmhist_fincl2="RIVER_DISCHARGE_OVER_LAND_LIQ"
-!rtmhist_nhtfrq=0,-24
-!rtmhist_mfilt=1,365
 EOF
 
 # note:

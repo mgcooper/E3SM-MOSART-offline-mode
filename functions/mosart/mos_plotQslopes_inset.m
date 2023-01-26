@@ -42,4 +42,5 @@ end
 h = mapshow(ax,mosart,'SymbolSpec',Dspec);
 caxis([minD maxD]) % set the colorbar
 
+end
 

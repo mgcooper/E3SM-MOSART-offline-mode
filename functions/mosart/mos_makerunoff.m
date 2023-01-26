@@ -1,39 +1,65 @@
 function [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
-
-% Inputs:
+%MOS_MAKERUNOFF
+% 
+%     [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
+% 
+% Inputs
+% 
 %   'slopes' a structure with the following fields:
 %       longxy  = latitude of computational unit, scalar
 %       latixy  = longitude of computational unit, scalar
 %       area    = area in m2
+% 
+%     'opts'
+%        inputGridded
+%        outputGridded
+%        save_file
 
-% Unlike mos_makemosartfile and mos_makedomainfile, this function doesn't
+
+% Unlike mos_makemosart and mos_makedomain, this function doesn't
 % use any information from the hillslopes structure except for the position
 % information which is used to interpolate the runoff to the slopes
 
+% % For reference:
+% QDRAI subsurface runoff, mm/s
+% QOVER surface runoff, mm/s
+% QRUNOFF total runoff, mm/s
+
+% GPCC.daily.nc
+% QDRAI
+% QOVER
+% QRUNOFF
+
+% GPCC.daily.runoff.1979-2008.nc
+% QDRAI
+% QOVER
+
 % if the input forcing is gridded, call the gridded function
 if opts.inputGridded
+
    [schema,info,data] = griddedRunoff(slopes,frunoff,fdomain,fsave,opts);
+
 else
+
    [schema,info,data] = listedRunoff(slopes,frunoff,fdomain,fsave,opts);
+
 end
 
 
-
+%-------------------------------------------------------------------------------
 function [schema,info,data] = listedRunoff(slopes,frunoff,fdomain,fsave,opts)
 
 % not implemented, instead i use a gridded runoff file as a template and
 % simply replace the gridded data with listed (unstructured) data
 
 
-
-
+%-------------------------------------------------------------------------------
 function [schema,info,data] = griddedRunoff(slopes,frunoff,fdomain,fsave,opts)
-
+% works with ming pan sag_YYYY_mosart.nc and GPCC.daily.nc
 % % read the hillslope lat/lon, ID, and downstream ID
 ID      = [slopes.ID];
 lat     = [slopes.lat];
 lon     = [slopes.lon];
-nCells  = length(lon);
 
 % read the runoff dataset
 varInfo     = ncinfo(frunoff);
@@ -49,33 +75,36 @@ lon         = wrapTo360(lon);
 LON         = wrapTo360(LON);
 
 % check which runoff vars are provided
+% QDRAI subsurface runoff, mm/s
+% QOVER surface runoff, mm/s
+% QRUNOFF total runoff, mm/s
 newVars     = {'QRUNOFF','QDRAI','QOVER'};
 hasQRUNOFF  = false;
 hasQDRAI    = false;
 hasQOVER    = false;
-
+% this is probably here for compatibility with ming pan and GPCC files
 if isfield(data,'QRUNOFF'); hasQRUNOFF  = true; end
 if isfield(data,'QDRAI');   hasQDRAI    = true; end
 if isfield(data,'QOVER');   hasQOVER    = true; end
 
-hasVars     = [hasQRUNOFF,hasQDRAI,hasQOVER];
+hasVars = [hasQRUNOFF,hasQDRAI,hasQOVER];
 
 % this checks if the forcing is all in QRUNOFF, QDRAI, QOVER, or split
 % between QDRAI and QOVER. it isn't a comprehensive check and needs to
 % be fixed at some point
 if hasQRUNOFF
-   Runoff  = permute(data.QRUNOFF,[2,1,3]);
+   Runoff = permute(data.QRUNOFF,[2,1,3]);
 
 elseif hasQDRAI && ~hasQOVER
-   Runoff  = permute(data.QDRAI,[2,1,3]);
+   Runoff = permute(data.QDRAI,[2,1,3]);
 
 elseif hasQOVER && ~hasQDRAI
-   Runoff  = permute(data.QOVER,[2,1,3]);
+   Runoff = permute(data.QOVER,[2,1,3]);
 
 elseif hasQOVER && hasQDRAI
-   Rover   = permute(data.QOVER,[2,1,3]);
-   Rdrai   = permute(data.QDRAI,[2,1,3]);
-   Runoff  = Rover + Rdrai;
+   Rover  = permute(data.QOVER,[2,1,3]);
+   Rdrain = permute(data.QDRAI,[2,1,3]);
+   Runoff = Rover + Rdrain;
 else
    error('runoff data not recognized');
 end
@@ -85,32 +114,26 @@ LON     = LON(:);
 LAT     = LAT(:);
 
 if opts.outputGridded == true
-   [schema,info,data]  =   griddedRunoffOutput(Runoff,nCells,LON,  ...
-      LAT,lon,lat,hasVars,newVars,frunoff,    ...
-      fdomain,fsave,opts);
+   [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
+      lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts);
 
 else
-   [schema,info,data]  =   listedRunoffOutput(Runoff,nCells,LON,   ...
-      LAT,lon,lat,hasVars,newVars,frunoff,    ...
-      fdomain,fsave,opts);
+   [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT, ...
+      lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts);
 end
 
 
 
 
-
-function [schema,info,data] =   listedRunoffOutput(Runoff,nCells,LON,   ...
-   LAT,lon,lat,hasVars,newVars,frunoff,    ...
-   fdomain,fsave,opts)
+%-------------------------------------------------------------------------------
+function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
+   lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts)
 
 % interpolate across days the input runoff to the hillslope units
-nDays   = size(Runoff,3);
-newR    = nan(nCells,nDays);
-for n = 1:nDays
-   thisR     = tocolumn(Runoff(:,:,n));
-   newR(:,n) = scatteredInterpolation(LON,LAT,thisR,lon,lat);
-end
-% lon     = wrapTo180(lon);   % unwrap it (don't think I need this anymore)
+nCells = numel(lat);
+nDays = size(Runoff,3);
+newR  = scatteredInterpolation(LON,LAT,reshape(Runoff,[],nDays),lon,lat);
+% lon = wrapTo180(lon);   % unwrap it (don't think I need this anymore)
 
 % need a general way to deal with redistributing QRUNOFF to QDRAI/OVER
 % but for now put it all in QDRAI
@@ -122,7 +145,7 @@ newData.QOVER   = zeros(size(newR));
 if opts.save_file
 
    % delete the file if it exists, otherwise there will be errors
-   if exist(fsave,'file'); delete(fsave); end
+   if isfile(fsave); delete(fsave); end
 
    % copy over these vars from the domain file to the runoff file
    %copyVars    = {'xc','yc','mask','area','frac'};
@@ -213,9 +236,9 @@ else
 end
 
 
-function [schema,info,data] =   griddedRunoffOutput(Runoff,nCells,LON,   ...
-   LAT,lon,lat,hasVars,newVars,frunoff,    ...
-   fdomain,fsave,opts)
+%-------------------------------------------------------------------------------
+function [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
+   lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts)
 
 % if output is gridded then no interpolation is needed
 
@@ -233,6 +256,8 @@ function [schema,info,data] =   griddedRunoffOutput(Runoff,nCells,LON,   ...
 %     if opts.outputGridded == true
 %         newR    = reshape(newR,nRows,nCols,nDays);
 %     end
+
+nCells = numel(lon);
 
 % need a general way to deal with redistributing QRUNOFF to QDRAI/OVER
 % but for now put it all in QDRAI
@@ -566,8 +591,6 @@ end
 %         info    = 'file not written, see newschema';
 %     end
 
-
-%========================================================================
 %% this shows the discrepancy between scatteredInterpolant and interp2
 % interpolate the GPCC runoff to the sag basin lat/lon
 % Rq          = scatteredInterpolant(LONrs,LATrs,Ravgrs,'linear');
@@ -602,9 +625,8 @@ end
 % view(2); shading flat
 
 % % Below here is how it was when I started
-% %==========================================================================
+
 % %% 1. read in icom files to use as a template for the new file
-% %==========================================================================
 % frunoff     = [path.data 'GPCC.daily.nc'];
 % fsave       = [path.save 'runoff_sag_test.nc'];
 %
@@ -620,9 +642,8 @@ end
 % surfm(data.lat,data.lon,mean(data.QRUNOFF,3));
 %
 %
-% %==========================================================================
 % %% 1. Load the hillsloper data and modify it for MOSART
-% %==========================================================================
+% 
 % load([path.sag 'sag_hillslopes']);
 %
 % % assign values to each variable
@@ -684,9 +705,7 @@ end
 % ncwriteschema(fsave,myschema.area);
 % ncwriteschema(fsave,myschema.frac);
 %
-% %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% % write the variable values
-% %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% %% write the variable values
 % ncwrite(fsave,'xc',xc);
 % ncwrite(fsave,'yc',yc);
 % ncwrite(fsave,'xv',xv);
@@ -696,6 +715,5 @@ end
 % ncwrite(fsave,'frac',frac);
 %
 % % read in the new file to compare with the old file
-% %==========================================================================
 % newinfo.domain  = ncinfo(fsave);
 

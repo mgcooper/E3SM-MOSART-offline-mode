@@ -1,7 +1,6 @@
 clean
 
 %% set paths
-%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 pathdata  = '/Users/coop558/myprojects/e3sm/sag/e3sm_input/sag_basin/';
 
 fmosart     = [pathdata 'MOSART_sag_test.nc'];

@@ -1,27 +1,50 @@
 function [schema,info,data] = mosartMakeDomainFile(slopes,ftemplate,fsave,opts)
+% MOSARTMAKEDOMAINFILE build domain file for MOSART
+%
+%  Inputs
+%
+%     'slopes' : a structure with the following fields:
+%
+%     longxy   : latitude of computational unit, scalar
+%     latixy   : longitude of computational unit, scalar
+%     area     : area in m2
+%
+%  Outputs
+%
+%     'schema' : netcdf schema for the domain file
+%     'info'   : ncinfo struct for the domain file
+%     'data'   : ncread output, the data written to the file
+%
+% See also
 
-% Inputs:
-%   'slopes' a structure with the following fields:
-%       longxy  = latitude of computational unit, scalar
-%       latixy  = longitude of computational unit, scalar
-%       area    = area in m2
 
 % these are the variables created by this function:
-%vars = {'xc','yc','xv','yv','mask','area','frac'};
-vars = {'xc','yc','mask','area','frac'};
+%vars    = {'xc','yc','xv','yv','mask','area','frac'};
+vars    = {'xc','yc','mask','area','frac'};
 
 % number of hillslope units in the domain
-ncells = numel(slopes);
+ncells  = numel(slopes);
 
 % to compute the surface area of each sub-basin in units of steradians
-Aearth = 510099699070762; % m2, this is earth area defined in E3SM
+Aearth  = 510099699070762; % m2, this is earth area defined in E3SM
+% Aearth  = 510065621724089;     % this is the area i used previously
 
 % assign values to each variable
-data.xc = wrapTo360([slopes.longxy]');
-data.yc = [slopes.latixy]';
-data.mask = int32(ones(ncells,1));
-data.frac = double(ones(ncells,1));
-data.area = ([slopes.area].*4.*pi./Aearth)';      % steradians
+data.xc     = wrapTo360([slopes.longxy]');
+data.yc     = [slopes.latixy]';
+data.mask   = int32(ones(ncells,1));
+data.frac   = double(ones(ncells,1));
+data.area   = ([slopes.area].*4.*pi./Aearth)';      % steradians
+
+
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% copied from old mk_sag_domain, check then delete
+% compare the area in the area file to the hillsloper areas
+% A = readfiles(fname_area_file); 
+% sum(A.area_m2_)/sum([slopes.area]) 1.16
+% sum([slopes.area]) trib: 73818500, sag (?) 12961625875
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+
 
 % compute the bounding box of each sub-basin
 data.xv = nan(4,ncells);                    % x vertices
@@ -30,15 +53,15 @@ data.yv = nan(4,ncells);                    % y vertices
 for n = 1:length(slopes)
 
    % Compute the area of the hillslopes in cartesian coordinates
-   y = slopes(n).Y_hs;
-   x = slopes(n).X_hs;
+   y   = slopes(n).Y_hs;
+   x   = slopes(n).X_hs;
 
-   tf = islatlon(y(1),x(1));
+   tf  = islatlon(y(1),x(1));
    if tf
       [x,y,f] = ll2utm([y,x]);
    end
 
-   poly = polyshape(x,y);
+   poly    = polyshape(x,y);
    [xb,yb] = boundingbox(poly);
 
    if tf
@@ -48,8 +71,8 @@ for n = 1:length(slopes)
    % data.xv(:,n) = [x(1) x(2) x(2) x(1)];
    % data.yv(:,n) = [y(1) y(1) y(2) y(2)];
 
-   [lat,lon] = geoquadpt([slopes(n).Lat_hs],[slopes(n).Lon_hs]);
-   lon = wrapTo360(lon);
+   [lat,lon]   = geoquadpt([slopes(n).Lat_hs],[slopes(n).Lon_hs]);
+   lon         = wrapTo360(lon);
 
    data.xv(:,n) = [lon(1) lon(2) lon(2) lon(1)];
    data.yv(:,n) = [lat(1) lat(1) lat(2) lat(2)];
@@ -107,3 +130,4 @@ end
 % Say in your case, I think ni = 22, nj =1 for the runoff domain. Then
 % MOSART input should have gridcell dimension, which have the size of 22 as
 % well. And they should have the same order (e.g., matched ID). (edited)
+
