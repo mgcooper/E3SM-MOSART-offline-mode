@@ -19,13 +19,13 @@ parse(p,Mesh);
    
 %------------------------------------------------------------------------------
 
-cell_ID    = [Mesh(:).lCellID]';
-cell_dnID  = [Mesh(:).lCellID_downslope]';
+cell_ID    = transpose([Mesh(:).lCellID]);
+cell_dnID  = transpose([Mesh(:).lCellID_downslope]);
 
 % Convert ID
 N  = numel(cell_ID);
-ID = (1:N)';
-dnID = nan(N,1);
+ID = transpose(1:N);
+dnID = NaN(N,1);
 
 for n = 1:N
    if cell_dnID(n) == -9999

@@ -56,4 +56,14 @@ for i = 1 : m
    end
 end
 
-
+% % this is the in-line code in makeMosartHexwatershed, 
+% if show_river
+%    figure;
+%    for i = 1 : length(ID)
+%       if dnID(i) ~= -9999
+%          plot([lon(ID(i)) lon(dnID(i))],[lat(ID(i)) lat(dnID(i))],'b-','LineWidth',1.5);hold on;
+%       else
+%          plot(lon(ID(i)),lat(ID(i)),'r*'); hold on;
+%       end
+%    end
+% end

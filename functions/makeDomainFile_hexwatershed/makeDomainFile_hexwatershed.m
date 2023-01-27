@@ -28,8 +28,6 @@ option = p.Results.option;
    
 %------------------------------------------------------------------------------
 
-
-
 % this was at the bottom of donghui's generate_mosart_from_hexwatershed
 mask = zeros(length(frac),1);
 mask(frac > 0) = 1;                  

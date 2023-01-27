@@ -39,11 +39,11 @@ rxy = 30000;
 %% make the input data available using the Config.m function / env vars
 
 % get the pyhexwatershed output version
-hexvers = getenv('HEXVERS');
+hexvers = getenv('USER_HEXWATERSHED_VERSION');
 
 % load the mesh, flowline, and dams data
-load(fullfile(getenv('DATAPATH'),'hexwatershed','mpas_mesh.mat'),'Mesh');
-load(fullfile(getenv('DATAPATH'),'pyflowline','mpas_flowline.mat'),'Line');
+load(fullfile(getenv('USER_MOSART_DOMAIN_DATA_PATH'),'mpas_mesh.mat'),'Mesh');
+load(fullfile(getenv('USER_PYFLOWLINE_DATA_PATH'),'mpas_flowline.mat'),'Line');
 load(fullfile(getenv('DAMSFILE')),'Dams');
 load(fullfile(getenv('BOUNDSFILE')),'latpoly','lonpoly');
 

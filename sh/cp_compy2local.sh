@@ -7,7 +7,12 @@
 # copy an individual file to this directory:
 # ------------------------------------------------------------
 # SRCNAME=dlnd.streams.txt.lnd.gpcc.icom_mpas
-# SRCPATH=$COMPYDATAPATH/usrdat/$SRCNAME
+# SRCPATH=$COMPY_DATA_PATH/usrdat/$SRCNAME
+# DSTPATH=$(pwd)/$SRCNAME
+# rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
+
+# SRCNAME=RUNOFF05_2019_99.mat
+# SRCPATH=$COMPY_ROOT_PATH/qfs/people/xudo627/ming/runoff/$SRCNAME
 # DSTPATH=$(pwd)/$SRCNAME
 # rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
 
@@ -64,7 +69,7 @@
 # rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
 
 # ------------------------------------------------------------
-# copy a directory
+# copy the pyflowline directory
 # ------------------------------------------------------------
 # SRCPATH=coop558@compy01:/compyfs/liao313/04model/pyhexwatershed/susquehanna/pyhexwatershed20220901014/pyflowline/0001
 # DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20220901014/pyflowline
@@ -77,7 +82,7 @@
 
 
 # ------------------------------------------------------------
-# copy a directory
+# copy the  directory
 # ------------------------------------------------------------
 
 # note the two different directories:
@@ -88,13 +93,21 @@
 # SRCPATH=coop558@compy01:/compyfs/icom/liao313/04model/pyhexwatershed/icom/pyhexwatershed20221115006/pyflowline
 # DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20221115006/pyflowline
 
-SRCPATH=coop558@compy01:/compyfs/icom/liao313/04model/pyhexwatershed/icom/pyhexwatershed20221115006/hexwatershed
-DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20221115006/hexwatershed
-
-if [ ! -d $DSTPATH ]; then mkdir $DSTPATH; fi
+# SRCPATH=coop558@compy01:/compyfs/icom/liao313/04model/pyhexwatershed/icom/pyhexwatershed20221115006/hexwatershed
+# DSTPATH=/Users/coop558/work/data/icom/hexwatershed/pyhexwatershed20221115006/hexwatershed
+# 
+# if [ ! -d $DSTPATH ]; then mkdir $DSTPATH; fi
 
 # this will create the directory at the end of SRCPATH in DSTPATH
 # rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
 
 # this will not create the directory at the end of SRCPATH in DSTPATH (it will copy the contents of the directory at the end of SRCPATH into the directory at the end of DSTPATH)
-rsync -a -e ssh -P "$SRCPATH/" "$DSTPATH"
+# rsync -a -e ssh -P "$SRCPATH/" "$DSTPATH"
+
+# ------------------------------------------------------------
+# copy the  ming pan runoff half-degree, daily
+# ------------------------------------------------------------
+
+SRCPATH=$COMPY_ROOT_PATH/compyfs/inputdata/lnd/dlnd7/mingpan
+DSTPATH=/Users/coop558/work/data/e3sm/compyfs/inputdata/lnd/dlnd7
+rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
