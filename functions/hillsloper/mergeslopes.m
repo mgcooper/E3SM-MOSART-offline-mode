@@ -1,4 +1,4 @@
-function hs_new = mos_mergeslopes(slopes,slope_id)
+function hs_new = mergeslopes(slopes,slope_id)
 %MERGE_SLOPES merge the plus/minus hillslopes with each other
 
 % slopes    = structure (shapefile) containing hillslopes

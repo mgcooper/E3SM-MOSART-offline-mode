@@ -12,6 +12,20 @@ opts = const( ...
 
 sitename = opts.sitename;
 
+%{
+
+Important notes. The mosartlsopes.latixy/longxy are the mean link lat/lon, which
+may not be correct, it depends on whether the lat/lon field in the mosart
+parameter file is supposed to equal the lat/lon in the domain file. The domain
+file isn't even used right now b/c we use the runoff file for the domain info in
+user_dlnd, but I had forgotten this. I also forgot that the mosartslopes are
+numbered from 1:numel(links), and are not numbered by the hillsloper hs_id
+field, since Mosart is in terms of links. This was problematic when I tried to
+replace the mosartslopes area field with the new area data from Bo. Her data was
+numbered using the hillsloper hs_id field. 
+
+%}
+
 %% set paths
 
 path_domain_data = ...
@@ -45,18 +59,28 @@ fname_save = ...
 
 %% load the hillsloper data that has ID and dnID and prep it for MOSART
 
-load( ...
-   fullfile(path_domain_data,'mosart_hillslopes.mat'),'mosartslopes');
+load(fullfile(path_domain_data,'mosart_hillslopes.mat'),'mosartslopes');
 
-%% TEST
+%% put the updated ats area into the mosart fields
 
-% compare the area in the area file to the hillsloper areas
-A = readfiles(fname_area_file); 
+% the ats hillslopes are ordered by hillsloper hs_id, but mosartslopes are
+% ordered by 1:numel(links). the links.hs_id field maps between them.
+A = combineHillslopeArea(fname_area_file,transpose([mosartslopes.hs_id]));
 
-% sum(A.area_m2_)/sum([slopes.area]) 1.16
-% sum([slopes.area]) trib: 73818500, sag (?) 12961625875
+% replace the mosartslopes area field with the updated one
+mosartslopes = addstructfields(mosartslopes,A,'newfieldnames','area');
+
+% this shows the ordering is correct
+% figure; scatterfit(A, [mosartslopes.area]) 
 
 %% write the file
+
+% back up the existing file
+if isfile(fname_save)
+   fname_bk = backupfilename(fname_save);
+   copyfile(fname_save,fname_bk);
+end
+
 [schema,info,data] = ...
    mosartMakeDomainFile(mosartslopes,fname_domain,fname_save,opts);
 
@@ -64,11 +88,11 @@ A = readfiles(fname_area_file);
 cd(path_mosart_file_save)
 
 % not sure what this was, maybe plot the boxes around each node 
-if opts.test_plot
+if opts.testplot
    macfig
-   for n = 1:data.xc
+   for n = 1:numel(data.xc)
       if isfield(data,'xv')
-         plot(data.xv(:,n),data.yv(:,n)); hold on;
+         geobox(data.yv(:,n),data.xv(:,n));
       end
       myscatter(data.xc(n),data.yc(n),80); hold on;
       pause

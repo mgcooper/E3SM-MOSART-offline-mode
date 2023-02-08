@@ -1,5 +1,5 @@
-function plot_hillsloper(slopes,links,nodes)
-%PLOT_HILLSLOPER plots the slopes, links, and nodes in a hillsloper slopes struct
+function plothillsloper(slopes,links,nodes)
+%PLOTHILLSLOPER plots the slopes, links, and nodes in a hillsloper slopes struct
 % 
 %  Syntax
 % 

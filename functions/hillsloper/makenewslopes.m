@@ -1,4 +1,4 @@
-function [newslopes,newlinks,info] = mos_makeslopes(slopes,links,nodes,plot_slopes)
+function [newslopes,newlinks,info] = makenewslopes(slopes,links,nodes,plot_slopes)
 %MOS_MAKESLOPES takes the slopes, links, and nodes shapefiles and
 %identifies the upstream/downstream link connectivity as well as the inlet
 %(headwater) and outlet id's
@@ -51,11 +51,11 @@ for n = 1:numel(links)
    newlinks(n).ds_conn_ID  = ds_conn_id;
 
    if length(us_conn_id) == 1
-      inletID    = [inletID;links(n).id];
+      inletID = [inletID;links(n).id];
    end
 
    if length(ds_conn_id) == 1
-      outletID   = [outletID;links(n).id];
+      outletID = [outletID;links(n).id];
    end
 
 end
@@ -137,7 +137,7 @@ info.outlet_ID = outletID;
 
 % plot the slopes if requested
 if plot_slopes == true
-   info.h = mos_plotslopes(newslopes,newlinks,nodes);
+   plothillsloper(newslopes,newlinks,nodes);
 end
 
 % not sure if this is needed, it was in a different part of the script

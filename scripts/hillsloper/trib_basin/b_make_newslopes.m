@@ -1,21 +1,21 @@
 clean
 
-opts    = const('save_data',false,'plot_map',true,'plot_slopes',true);
+opts = const('save_data',false,'plot_map',true,'plot_slopes',true);
 
 
 %% set paths and read in the data
 
-pathdata = setpath('interface/data/sag/hillsloper/trib_basin/newslopes/');
-pathsave = setpath('interface/data/sag/hillsloper/trib_basin/newslopes/');
+pathdata = setpath('/interface/hillsloper/trib_basin/newslopes/','data');
+pathsave = setpath('/interface/hillsloper/trib_basin/newslopes/','data');
 
-load([pathdata 'sag_hillslopes']);
+load(fullfile(pathdata,'sag_hillslopes'));
 
 % export_fig('temp.png', '-nocrop', '-transparent', '-png','-r400')
 
 
 %% Step 1: make a newlinks table with upstream/downstream link connectivity
 
-[slopes,links,info] = mos_makeslopes(slopes,links,nodes,opts.plot_slopes);
+[slopes,links,info] = makenewslopes(slopes,links,nodes,opts.plot_slopes);
 
 % note that the slopes table that comes from this is not the mosart slopes
 % table, it still has 2 'slopes' per link, but it is cleaned up relative to
@@ -28,36 +28,37 @@ load([pathdata 'sag_hillslopes']);
 
 %% Step 5: build a table with the MOSART input file information
 
-proj    = projcrs(3338,'Authority','EPSG');
+proj = projcrs(3338,'Authority','EPSG');
 
 for n = 1:length(links)
     
     % hillslope associated with this reach
-    slope_id    = links(n).hs_id;
-    slope_info  = mos_mergeslopes(slopes,slope_id);
+    slope_id = links(n).hs_id;
+    slope_info = mergeslopes(slopes,slope_id);
 
     % pull out values needed for input file, convert km to m where needed
-    lat         = mean([links(n).Lat]);
-    lon         = mean([links(n).Lon]);
-    id          = links(n).link_ID;
-    dnid        = links(n).ds_link_ID;
-    rslp        = roundn(links(n).slope,-4);
-    rlen        = roundn(links(n).len_km*1e3,0);
-    hslp        = roundn(double(slope_info.hslp),-4);
-    harea       = roundn(double(slope_info.harea),0);
-    helev       = roundn(double(slope_info.helev),0);
-    usarea      = roundn(links(n).us_da_km2*1e6,-4);
+    lati = mean([links(n).Lat]);
+    long = mean([links(n).Lon]);
+    hsid = links(n).link_ID;
+    dnid = links(n).ds_link_ID;
+    rslp = round(links(n).slope,4);
+    rlen = round(links(n).len_km*1e3,0);
+    hslp = round(double(slope_info.hslp),4);
+    harea = round(double(slope_info.harea),0);
+    helev = round(double(slope_info.helev),0);
+    uarea = round(links(n).us_da_km2*1e6,4);
     
     % get the lat/lon of the merged slopes. this is done here rather than
     % mos_mergeslopes because the projection could change. The poly2cw
     % thing prevents an extra 90o from being appended to hslat, not sure
     % why it happens. 
-    [xn,yn]     = poly2cw(slope_info.X,slope_info.Y);
-    [xn,yn]     = closePolygonParts(xn,yn);
+    [xn,yn] = poly2cw(slope_info.X,slope_info.Y);
+    [xn,yn] = closePolygonParts(xn,yn);
     [hslt,hsln] = projinv(proj,xn,yn);
-    idx         = find(hslt==90);
-    hslt(idx)   = [];
-    hsln(idx)   = [];
+
+    idx = find(hslt==90);
+    hslt(idx) = [];
+    hsln(idx) = [];
     
     
     % previously i divided hslp/tslp by 100, but i think that's wrong
@@ -73,27 +74,28 @@ for n = 1:length(links)
     mos(n).Lon_hs       = hsln;
     mos(n).Lat_link     = links(n).Lat;
     mos(n).Lon_link     = links(n).Lon;
-    mos(n).latixy       = lat;
-    mos(n).longxy       = lon;
-    mos(n).ID           = id;
+    mos(n).latixy       = lati;
+    mos(n).longxy       = long;
+    mos(n).ID           = hsid;
     mos(n).dnID         = dnid;
+    mos(n).hs_id        = slope_id;
     mos(n).fdir         = 4;        % flow direction
-    mos(n).lat          = lat;
-    mos(n).lon          = lon;
+    mos(n).lat          = lati;
+    mos(n).lon          = long;
     mos(n).frac         = 1;        % fraction of cell included in study area
     mos(n).rslp         = rslp;     % river slope               [-]
     mos(n).rlen         = rlen;     % river width               [m]
     mos(n).rdep         = 2;        % dummy, bankfull depth     [m]
-    mos(n).rwid         = 50;       % dummy, bankfull width     [m]
+    mos(n).rwid         = 20;       % dummy, bankfull width     [m]
     mos(n).rwid0        = 50;       % dummy, floodplain width   [m]
     mos(n).gxr          = 1;        % dummy, drainage density   [-]
     mos(n).hslp         = hslp;     % hillslope slope           [-]
     mos(n).twid         = 2;        % dummy, trib width         [m]
     mos(n).tslp         = hslp;     % trib slope                [-]
     mos(n).area         = harea;    % hillslope area            [m2]
-    mos(n).areaTotal0   = usarea;   % upstream   
-    mos(n).areaTotal    = usarea;   % upstream drainage area    [m2]
-    mos(n).areaTotal2   = usarea;   % 'computed' upstream d.a.  [m2]
+    mos(n).areaTotal0   = uarea;    % upstream   
+    mos(n).areaTotal    = uarea;    % upstream drainage area    [m2]
+    mos(n).areaTotal2   = uarea;    % 'computed' upstream d.a.  [m2]
     mos(n).nr           = 0.05;     % manning's, river
     mos(n).nt           = 0.05;     % manning's, trib
     mos(n).nh           = 0.075;    % manning's, hillslope
@@ -118,9 +120,14 @@ mosartslopes = mos; clear mos;
 %% save the data (don't overwrite the original! use 'mosart_hillslopes')
 
 if opts.save_data == true
-    save([pathsave 'mosart_hillslopes'],'mosartslopes','links','slopes');
+    save(fullfile(pathsave,'mosart_hillslopes'),'mosartslopes','links','slopes');
 end
 
+% % patch i used to add the hs_id
+% load(fullfile(pathsave,'mosart_hillslopes'),'mosartslopes','links','slopes');
+% for n = 1:numel(mosartslopes)
+%    mosartslopes(n).hs_id = links(n).hs_id;
+% end
 
 % this was just to confirm the boudning box i make in mos_mergeslopes has
 % the same format as the shaperead-style bounding box (it does)

@@ -12,7 +12,7 @@ thispath = fileparts(mfilename('fullpath'));
 
 % add all paths then remove git paths
 addpath(genpath(thispath));
-rmpath(genpath([thispath filesep '.git*']));
+rmpath(genpath(fullfile(thispath,'.git')));
 
 % add paths set in Config
 

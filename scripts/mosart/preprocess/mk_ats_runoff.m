@@ -1,125 +1,117 @@
 clean
 
-% % %
-sitename = 'trib_basin';
-atsrun   = 'huc0802_gauge15906000_nopf'; %'huc0802_gauge15906000';
-
-% workon E3SM-MOSART-offline-mode
-
-% this assumes the mingpan data files have already been created, then reads
+% this assumes the ming pan data files have already been created, then reads
 % those in and replaces the runoff with the ats runoff
 
-% set the options
-opts     = const( 'savefile',       false,                        ...
-                  'sitename',       sitename,                     ...
-                  'startyear',      1998,                         ...
-                  'endyear',        2002                          );
-                
-nyears   = opts.endyear-opts.startyear+1;
+%% set the options
+
+savefile = true;
+sitename = 'trib_basin';
+atsrunID = 'huc0802_gauge15906000_nopf';
+fname_domain_data = 'mosart_hillslopes.mat';
+fname_runoff_data = 'huc0802_gauge15906000_nopf_discharge_2D.xlsx';
+fname_hsarea_data = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
+
+opts = const( ...
+   'savefile',savefile, ...
+   'sitename',sitename, ...
+   'startyear',1998, ...
+   'endyear',2002, ...
+   'runID',atsrunID);
+
+%% build paths
+
+path_domain_data = ...
+   getenv('USER_HILLSLOPER_DATA_PATH');
+
+path_runoff_data = ...
+   fullfile( ...
+   getenv('USER_ATS_DATA_PATH'), ...
+   opts.runID);
+
+path_runoff_template = ...
+   fullfile( ...
+   getenv('USER_MOSART_RUNOFF_PATH'), ...
+   opts.sitename, ...
+   'mingpan');
+
+% set the filename for the output file
+path_runoff_file = ...
+   fullfile( ...
+   getenv('USER_MOSART_RUNOFF_PATH'), ...
+   opts.sitename, ...
+   'ats', ...
+   opts.runID);
+
+%% build filenames
+
+% set the filename for the custom area data
+fname_area_data = ...
+   fullfile( ...
+   path_runoff_data, fname_hsarea_data);
+
+% set the filename for the ats runoff data
+fname_runoff_data = ...
+   fullfile( ...
+   path_runoff_data, fname_runoff_data);
+
+% set the filename for the hillsloper data
+fname_domain_data = ...
+   fullfile( ...
+   path_domain_data, fname_domain_data);
 
 
-pathdata = setpath(['interface/hillsloper/' sitename '/newslopes/'],'data');
-pathroff = setpath(['interface/ATS/' atsrun],'data','goto');
-pathtemp = ['/Users/coop558/work/data/e3sm/forcing/' sitename '/mingpan'];
-pathsave = ['/Users/coop558/work/data/e3sm/forcing/' sitename '/ats'];
+%% make the runoff files
 
-% load the hillsloper data, the ats runoff, and a template runoff .nc file
-load([pathdata 'mosart_hillslopes']); slopes = mosartslopes;
-load([pathroff 'ats_runoff.mat']); clear mosartslopes
+% load the ats runoff data 
+[roff,time,area] = prepAtsRunoff(fname_area_data,fname_runoff_data,hs_id);
 
-% mos_plotslopes(slopes,links)
-plot_hillsloper(slopes,links)
+runyears = unique(year(time));
+[~,nyears,nslopes] = size(roff);
 
-% get the ATS runoff
-timeATS  = T.Time;
-ndays    = numel(timeATS);
-nslopes  = numel(slopes);
-roffATS  = nan(ndays,nslopes);
-
-% combine the ats runoff for each hillslope
-for n = 1:nslopes
-    
-    str1 = ['slope_' num2str(2*n-1) ];
-    str2 = ['slope_' num2str(2*n)];
-    
-    roffATS(:,n) = T.(str1) + T.(str2);
-end
-clear data str1 str2
-
-% convert from m3/d to mm/s
-area    = [slopes.area];                    % m2
-roffATS = roffATS./area;                    % m/d
-roffATS = roffATS*1000/(24*3600);           % mm/s
-roffATS = reshape(roffATS,365,nyears,nslopes);
-timeATS = reshape(timeATS,365,nyears);
-
-% % % 
-
-%% convert the ats data to a netcdf
-
-roffMP  = nan(size(roffATS));    % initialize ats runoff
+roffMP = nan(size(roff));    % initialize ats runoff
 
 for n = 1:nyears
-    
-    thisyear    = num2str(opts.start_year + n - 1);
-    frunoff     = [pathtemp 'runoff_' opts.site_name '_' thisyear '.nc'];
-    fsave       = [pathsave 'runoff_' opts.site_name '_' thisyear '.nc'];
-    
-    % keep the ming pan runoff to compare with ATS
-    roffMP(:,n,:)   = permute(ncread(frunoff,'QDRAI'),[3 2 1]);
-    
-    if ~exist(fsave,'file')
-        system(['cp ' frunoff ' ' fsave]);
-    end
-    
-    % QDRAI
-    var     = 'QDRAI';
-    sch     = ncinfo(frunoff,var);
-    Qtmp    = squeeze(roffATS(:,n,:));
-    QDRAI   = nan(nslopes,1,365);
-    for m = 1:365
-        QDRAI(:,1,m) = Qtmp(m,:);
-    end
 
-    if opts.save_file
-        ncwriteschema(fsave,sch);
-        ncwrite(fsave,var,QDRAI);
-    end
+   nyear = num2str(runyears(n));
+   fname = ['runoff_' site_name '_' nyear '.nc'];
+   fcopy = fullfile(path_runoff_template,fname); % finfo = ncinfo(fcopy);
+   fsave = fullfile(path_runoff_file,fname);
 
-    % QOVER
-    var     = 'QOVER';
-    sch     = ncinfo(frunoff,var);
-    QOVER   = 0.0.*QDRAI;
-    
-    if opts.save_file
-        ncwriteschema(fsave,sch);
-        ncwrite(fsave,var,QOVER);
-    end
+   % keep the ming pan runoff to compare with ATS
+   roffMP(:,n,:) = permute(ncread(fcopy,'QDRAI'),[3 2 1]);
 
-    newinfo = ncinfo(fsave);
+   if isfile(fsave) && opts.make_backups == true
+      fbackup = backupfilename(fsave);
+      copyfile(fsave,fbackup);
+   else
+      system(['cp ' fcopy ' ' fsave]);
+   end
 
+   % QDRAI
+   schem = ncinfo(fcopy,'QDRAI');
+   Qtemp = squeeze(roff(:,n,:));
+   QDRAI = nan(nslopes,1,365);
+   for m = 1:365
+      QDRAI(:,1,m) = Qtemp(m,:);
+   end
+
+   if save_file
+      % ncwriteschema isn't needed if the file exists, which it will with the
+      % system(cp) call above, unless i want to change the schema, which isn't
+      % done but there's no harm in keeping it
+      ncwriteschema(fsave,schem); 
+      ncwrite(fsave,'QDRAI',QDRAI);
+   end
+
+   % QOVER
+   schem = ncinfo(fcopy,'QOVER');
+   QOVER = 0.0.*QDRAI;
+
+   if save_file
+      ncwriteschema(fsave,schem);
+      ncwrite(fsave,'QOVER',QOVER);
+   end
+   newinfo = ncinfo(fsave);
 end
-
-% for plotting, reshape back to one timeseries and convert to m3/s
-roffATS = reshape(roffATS,365*nyears,nslopes);
-roffATS = sum(roffATS.*area,2)/1000;
-
-roffMP  = reshape(roffMP,365*nyears,nslopes);
-roffMP  = sum(roffMP.*area,2)/1000;
-
-%% compare ATS roff with ming pan roff
-
-figure('Position',[165   299   762   294]);
-subplot(1,2,1);
-plot(timeATS(:),roffATS); hold on;
-plot(timeATS(:),roffMP);
-legend('ATS','Ming Pan');
-ylabel('daily runoff [m$^3$ s$^{-1}$]');
-
-subplot(1,2,2);
-plot(timeATS(:),cumsum(roffATS.*(3600*24/1e9))); hold on;
-plot(timeATS(:),cumsum(roffMP.*(3600*24/1e9)));
-l = legend('ATS','Ming Pan');
-ylabel('cumulative runoff [km$^3$]');
-figformat
 
