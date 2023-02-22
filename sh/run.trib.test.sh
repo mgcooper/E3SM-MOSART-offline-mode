@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# NOTE: if using this e.g. to test mannings, need to migrate new updates to run.trib.sh
+
 # USER case-specific values
 SITE_NAME='trib_basin'
 RUN_ID='ats' 													# 'ats' or 'pan'

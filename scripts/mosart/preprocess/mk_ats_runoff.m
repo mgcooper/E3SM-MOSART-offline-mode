@@ -1,7 +1,6 @@
 clean
 
-% this assumes the ming pan data files have already been created, then reads
-% those in and replaces the runoff with the ats runoff
+% this reads the ming pan runoff files and replaces the runoff with ats runoff
 
 %% set the options
 
@@ -21,14 +20,17 @@ opts = const( ...
 
 %% build paths
 
+% set the path to the domain data - in this case the hillsloper data
 path_domain_data = ...
    getenv('USER_HILLSLOPER_DATA_PATH');
 
+% set the path to the runoff data - in this case the ats runoff
 path_runoff_data = ...
    fullfile( ...
    getenv('USER_ATS_DATA_PATH'), ...
    opts.runID);
 
+% set the path to the template files - in this case the Ming Pan runoff files
 path_runoff_template = ...
    fullfile( ...
    getenv('USER_MOSART_RUNOFF_PATH'), ...
@@ -36,7 +38,7 @@ path_runoff_template = ...
    'mingpan');
 
 % set the filename for the output file
-path_runoff_file = ...
+path_runoff_files = ...
    fullfile( ...
    getenv('USER_MOSART_RUNOFF_PATH'), ...
    opts.sitename, ...
@@ -63,55 +65,83 @@ fname_domain_data = ...
 
 %% make the runoff files
 
-% load the ats runoff data 
-[roff,time,area] = prepAtsRunoff(fname_area_data,fname_runoff_data,hs_id);
+[newinfo,roffATS,roffMP] = makeAtsRunoff( ...
+                           sitename, ...
+                           atsrunID, ...
+                           fname_runoff_data, ...
+                           fname_domain_data, ...
+                           path_runoff_files, ...
+                           path_runoff_template, ...
+                           savefile, ...
+                           fname_hsarea_data);
 
-runyears = unique(year(time));
-[~,nyears,nslopes] = size(roff);
+%% make the dummy files one year before and one year after the first/last year
 
-roffMP = nan(size(roff));    % initialize ats runoff
+cd(path_runoff_files);
 
-for n = 1:nyears
+CopyInfo = makeDummyRunoffFiles(sitename,opts.startyear,opts.endyear, ...
+   path_runoff_files,opts.savefile,'nobackups');
 
-   nyear = num2str(runyears(n));
-   fname = ['runoff_' site_name '_' nyear '.nc'];
-   fcopy = fullfile(path_runoff_template,fname); % finfo = ncinfo(fcopy);
-   fsave = fullfile(path_runoff_file,fname);
+% info = ncinfo(pasteFile);
+% dat = ncread(['runoff_trib_basin_' num2str(n) '.nc'],'time' );
+% dat = dat+1;
+% ncwrite(['runoff_trib_basin_' num2str(n) '.nc'],'time',dat);
 
-   % keep the ming pan runoff to compare with ATS
-   roffMP(:,n,:) = permute(ncread(fcopy,'QDRAI'),[3 2 1]);
+%% look at the result
 
-   if isfile(fsave) && opts.make_backups == true
-      fbackup = backupfilename(fsave);
-      copyfile(fsave,fbackup);
-   else
-      system(['cp ' fcopy ' ' fsave]);
-   end
+cd(path_runoff_template)
 
-   % QDRAI
-   schem = ncinfo(fcopy,'QDRAI');
-   Qtemp = squeeze(roff(:,n,:));
-   QDRAI = nan(nslopes,1,365);
-   for m = 1:365
-      QDRAI(:,1,m) = Qtemp(m,:);
-   end
+% compare ATS roff with ming pan roff
+timeATS = roffATS.Time;
+roffATS = roffATS.roff;
+timeMP = roffMP.Time;
+roffMP = roffMP.roffMP;
 
-   if save_file
-      % ncwriteschema isn't needed if the file exists, which it will with the
-      % system(cp) call above, unless i want to change the schema, which isn't
-      % done but there's no harm in keeping it
-      ncwriteschema(fsave,schem); 
-      ncwrite(fsave,'QDRAI',QDRAI);
-   end
+figure('Position',[165   299   762   294]);
+subplot(1,2,1);
+plot(timeATS,roffATS); hold on;
+plot(timeMP,roffMP);
+legend('ATS','Ming Pan');
+ylabel('daily runoff [m$^3$ s$^{-1}$]');
 
-   % QOVER
-   schem = ncinfo(fcopy,'QOVER');
-   QOVER = 0.0.*QDRAI;
+subplot(1,2,2);
+plot(timeATS,cumsum(roffATS.*(3600*24/1e9))); hold on;
+plot(timeATS,cumsum(roffMP.*(3600*24/1e9)));
+l = legend('ATS','Ming Pan');
+ylabel('cumulative runoff [km$^3$]');
+figformat('linelinewidth',1.5)
 
-   if save_file
-      ncwriteschema(fsave,schem);
-      ncwrite(fsave,'QOVER',QOVER);
-   end
-   newinfo = ncinfo(fsave);
-end
 
+% FROM HERE, WE NEED TO:
+% 1. DONE use reyear_ats to make the 1997/2003 files and fix the schema
+% 2. copy the runoff files and if updated the MOSART file to compy:
+% qfs/people/coop558/data/e3sm/forcing/ats/<ats_runID>
+% 3. copy the user_dlnd.streams.txt.lnd.gpcc.ats.<site_name> to local and edit
+% the filenames if needed
+% 4. copy the run script to local and edit as needed
+% 5. copy the dlnd and run script back to compy
+% 6. run the run script
+
+% THEN WE NEED TO READ THE DATA BACK
+% 1. edit and run cp_compy2local.sh to copy the data to E3SM_OUTPUT_PATH
+% 2. edit and run scripts/mosart/postprocess/read_output_test_basin.m
+% 3. 
+
+
+% % double check that domain and runoff files are both updated
+
+domain_data = ncreaddata('/Users/coop558/work/data/e3sm/config/domain_trib_basin.nc');
+mosart_data = ncreaddata('/Users/coop558/work/data/e3sm/config/MOSART_trib_basin.nc');
+runoff_data = ncreaddata(fullfile(path_runoff_files,'runoff_trib_basin_1997.nc'));
+
+domain_x = domain_data.xc;
+domain_y = domain_data.yc;
+runoff_x = runoff_data.xc;
+runoff_y = runoff_data.yc;
+mosart_x = transpose(mosart_data.longxy);
+mosart_y = transpose(mosart_data.latixy);
+
+isequal(domain_x,runoff_x)
+isequal(domain_y,runoff_y)
+isequal(domain_x,mosart_x)
+isequal(domain_y,mosart_y)

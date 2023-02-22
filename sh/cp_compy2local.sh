@@ -6,7 +6,7 @@
 # ------------------------------------------------------------
 # copy E3SM output 
 # ------------------------------------------------------------
-run_name=trib_basin.1997.2003.run.2023-01-25-10-32.ats
+run_name=trib_basin.1997.2003.run.2023-02-08-164525.ats
 SRCPATH=$COMPY_SCRATCH_PATH/$run_name
 DSTPATH=$E3SM_OUTPUT_PATH
 

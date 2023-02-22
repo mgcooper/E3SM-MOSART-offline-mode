@@ -1,7 +1,7 @@
 function H = plotatsmosart(varargin)
 
 if nargin < 1
-   pathdata = fullfile(getenv('E3SMOUTPUTPATH'),getenv('MOSART_RUNID'),'mat');   
+   pathdata = fullfile(getenv('E3SMOUTPUTPATH'),getenv('MOSART_RUNID'),'mat');
    load(fullfile(pathdata,'mosart.mat'),'mosart');
 else
    mosart = varargin{1};
@@ -9,8 +9,8 @@ end
 
 
 % for plotting
-Tavg  = mosart.gaged.Tavg;
-T     = mosart.gaged.Tmod;
+Tavg = mosart.gaged.Tavg;
+T = mosart.gaged.Tmod;
 
 % plot the ATS data
 H.f1 = figure; 

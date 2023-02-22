@@ -16,44 +16,59 @@ function mosart = mos_readoutput(pathdata,varargin)
 % this works if the data are daily, organized as annual files,
 % need to modify for monthly averages
 
-% the second input must be the name of a variable
-var = 'RIVER_DISCHARGE_OVER_LAND_LIQ';
-if nargin == 2
-   var = varargin{1};
-elseif nargin == 3
-   var = varargin{1};
-   timestep = varargin{2};
-end
+% parse inputs
+%--------------
+varnames = {'RIVER_DISCHARGE_OVER_LAND_LIQ'};
+filetypes = {'h1','h0'};
+validvars = @(x)any(validatestring(x,varnames));
+validfiles = @(x)any(validatestring(x,filetypes));
 
-flist = getlist(pathdata,'*.mosart.h0*');
+p = inputParser;
+p.addRequired('pathdata',@(x)ischar(x));
+p.addOptional('varname','RIVER_DISCHARGE_OVER_LAND_LIQ',validvars);
+p.addOptional('filetype','h0',validfiles);
+p.parse(pathdata,varargin{:});
+args = p.Results;
+%-----------------
+
+
+% main code
+flist = getlist(pathdata,['*.mosart.' args.filetype '*']);
+
 if isempty(flist)
-   flist = getlist(pathdata,'*.mosart.h1*');
+   error('no files found');
 end
 
 % read the nc info, make a list of variables, get lat/lon
-nfiles  = numel(flist);
-fdir    = flist(1).folder; % the run/ dir
-info    = ncinfo(fullfile(flist(1).folder,flist(1).name));
-vars    = {info.Variables.Name};
-lon     = double(ncread(fullfile(fdir,flist(1).name),'lon'));
-lat     = double(ncread(fullfile(fdir,flist(1).name),'lat'));
+numfiles = numel(flist);
+pathdata = flist(1).folder; % the run/ dir
+fileinfo = ncinfo(fullfile(flist(1).folder,flist(1).name));
+varnames = {fileinfo.Variables.Name};
 
-% project the lat/lon to alaska albers
-%     load('proj_alaska_albers','proj_alaska_albers');
-proj_alaska_albers = projcrs(3338,'Authority','EPSG');
-[x,y] = projfwd(proj_alaska_albers,lat,lon);
+lon = double(ncread(fullfile(pathdata,flist(1).name),'lon'));
+lat = double(ncread(fullfile(pathdata,flist(1).name),'lat'));
+
+% project the lat/lon to alaska albers or fall back to utm
+try
+   proj_alaska_albers = projcrs(3338,'Authority','EPSG');
+   [x,y] = projfwd(proj_alaska_albers,lat,lon);
+catch ME
+   if strcmp(ME.identifier,'MATLAB:license:checkouterror')
+      [x,y] = ll2utm([lat,lon]); % use utm
+   end
+end
 
 % read all the data
-for n = nfiles:-1:1
-   data(n) = ncreaddata(fullfile(fdir,flist(n).name),vars);
+for n = numfiles:-1:1
+   data(n) = ncreaddata(fullfile(pathdata,flist(n).name),varnames);
 end
 
 % stitch the discharge data into one long timeseries
 % init the discharge array (ncells x ndays x nyears = 3266 x 365 x 30)
-[ndays,ncells] = size(data(1).(var));
+[ndays,ncells] = size(data(1).(args.varname));
 
-D = nan(nfiles,ndays,ncells);
-T = nan(nfiles,ndays);
+D = nan(numfiles,ndays,ncells);
+T = nan(numfiles,ndays);
 
 % locate the outlet id
 try
@@ -76,11 +91,11 @@ end
 
 % mcdate is the actual calendar date, format is YYYYMMDD
 
-for n = 1:nfiles
+for n = 1:numfiles
 
    try
-      D(n,:,:) = data(n).(var);  % save RIVER_DISCHARGE_OVER_LAND_LIQ
-      T(n,:)   = data(n).mcdate; %
+      D(n,:,:) = data(n).(args.varname); % save RIVER_DISCHARGE_OVER_LAND_LIQ
+      T(n,:) = data(n).mcdate; %
    catch
    end
 
@@ -101,10 +116,10 @@ end
 
 
 % check if any files have all nan data
-allNan  = false(nfiles,1);
-for n = 1:nfiles
+allNan  = false(numfiles,1);
+for n = 1:numfiles
    if all(isnan(D(n,:,:)))
-      allNan(n)  = true;
+      allNan(n) = true;
    end
 end
 
@@ -116,9 +131,9 @@ if any(allNan)
    end
 end
 
-D       = D(~allNan,:,:);
-T       = T(~allNan,:);
-nfiles  = size(D,1);
+D = D(~allNan,:,:);
+T = T(~allNan,:);
+numfiles = size(D,1);
 
 % if the data files are monthly, reshape to annual
 if size(D,2) == 30
@@ -161,16 +176,16 @@ else
 
    % D is numfiles x numdays x numcells. if data is annual this gets mean-annual
    % compute mean annual D, std dev, and reshape into a timeseries
-   Tyrs    = datetime(T,'ConvertFrom','yyyymmdd') - days(1);
-   nyears  = numel(unique(year(Tyrs)));
-   Davg    = squeeze(mean(D,1));
-   Dstd    = squeeze(std(D,[],1));
-   Dyrs    = D;
+   Tyrs = datetime(T,'ConvertFrom','yyyymmdd') - days(1);
+   nyears = numel(unique(year(Tyrs)));
+   Davg = squeeze(mean(D,1));
+   Dstd = squeeze(std(D,[],1));
+   Dyrs = D;
    
    % put it in a long timeseries
-   D       = permute(D,[2,1,3]); T = permute(T,[2,1]);
-   D       = reshape(D,ndays*nyears,ncells);
-   T       = datetime(T(:),'ConvertFrom','yyyymmdd');
+   D = permute(D,[2,1,3]); T = permute(T,[2,1]);
+   D = reshape(D,ndays*nyears,ncells);
+   T = datetime(T(:),'ConvertFrom','yyyymmdd');
    
    % shift the calendar back one day
    T = T - days(1);
@@ -185,7 +200,7 @@ mosart.Davg     = Davg;
 mosart.Dstd     = Dstd;
 mosart.Dyrs     = Dyrs;
 mosart.Tyrs     = Tyrs;
-mosart.info     = info;
+mosart.info     = fileinfo;
 mosart.lat      = lat;
 mosart.lon      = lon;
 mosart.x        = x;

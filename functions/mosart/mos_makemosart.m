@@ -22,6 +22,12 @@ function [schema,info,data] = mos_makemosart(slopes,ftemplate,fsave,opts)
 % parse options
 savefile = opts.savefile;
 
+% % note - doesn't matter, only the fields in ftemplate get copied over
+% % remove the hs_id field
+% if isfield(slopes,'hs_id')
+%    slopes = rmstructfields(slopes,'hs_id');
+% end
+
 % the variables provided to create the file
 inVars = fieldnames(slopes);
 
@@ -64,16 +70,16 @@ ele = nan(nele,nCells);
 
 for n = 1:length(slopes)
    ele(:,n) = slopes(n).ele;
-   slopes(n).rwid = 30; % 20 Jan 2023 changed 50 to 30 to test
+%    slopes(n).rwid = 30; % 20 Jan 2023 changed 50 to 30 to test
 %    slopes(n).rwid0 = 30; % 20 Jan 2023 changed 50 to 30 to test
-   slopes(n).rdep = 4; % 20 Jan 2023 changed 2 to 4 to test
-   slopes(n).nr = 0.5;
+%    slopes(n).rdep = 4; % 20 Jan 2023 changed 2 to 4 to test
+%    slopes(n).nr = 0.5;
    slopes(n).fdir = double(slopes(n).fdir);
 end
 ele = ele';
 
 for n = 1:length(slopes)
-   slopes(n).ele  = ele;
+   slopes(n).ele = ele;
 end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
