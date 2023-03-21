@@ -1,5 +1,5 @@
 function newslopes = removeslopes(slopes,rm_slope,rp_slope,rp_flag)
-%REMOVE_SLOPES merge one hillslope with another
+%REMOVESLOPES merge one hillslope with another
 % 
 % slopes    = structure (shapefile) containing hillslopes
 % rm_slope  = id of the slope to be removed
@@ -7,28 +7,28 @@ function newslopes = removeslopes(slopes,rm_slope,rp_slope,rp_flag)
 % rp_flag   = 1 for rp_slope plus, 0 for rp_slope minus
 
 % indices of the hillslopes
-idxrm_p     = find([slopes.hs_id] == rm_slope);     % 'plus' = larger
-idxrm_m     = find([slopes.hs_id] == -rm_slope);    % 'minus' = smaller
+idxrm_p = find([slopes.hs_ID] == rm_slope);     % 'plus' = larger
+idxrm_m = find([slopes.hs_ID] == -rm_slope);    % 'minus' = smaller
 if rp_flag == 1
-   idrp    = rp_slope; % keep track for easier indexing at the end
-   idxrp   = find([slopes.hs_id] == rp_slope);
+   idrp  = rp_slope; % keep track for easier indexing at the end
+   idxrp = find([slopes.hs_ID] == rp_slope);
 else
-   idrp    = -rp_slope;
-   idxrp   = find([slopes.hs_id] == -rp_slope);
+   idrp  = -rp_slope;
+   idxrp = find([slopes.hs_ID] == -rp_slope);
 end
 
 % pull out the hillslopes
-hsrm_p      = slopes(idxrm_p);  % hillslope remove plus
-hsrm_m      = slopes(idxrm_m);  % hillslope remove minus
-hsrp        = slopes(idxrp);    % hillslope replace (here, plus)
+hsrm_p = slopes(idxrm_p);  % hillslope remove plus
+hsrm_m = slopes(idxrm_m);  % hillslope remove minus
+hsrp = slopes(idxrp);      % hillslope replace (here, plus)
 
 % create a polyshape to extract the new boundaries
-xnew        = [hsrp.X hsrm_m.X hsrm_p.X];
-ynew        = [hsrp.Y hsrm_m.Y hsrm_p.Y];
-hspoly      = polyshape(xnew,ynew);     % merged polyshape
-[xnew,ynew] = boundary(hspoly);         % just the boundary
-hspoly      = polyshape(xnew,ynew);     % make a new polyshape
-[xlim,ylim] = boundingbox(hspoly);      % new boundingbox
+xnew = [hsrp.X hsrm_m.X hsrm_p.X];
+ynew = [hsrp.Y hsrm_m.Y hsrm_p.Y];
+hspoly = polyshape(xnew,ynew);         % merged polyshape
+[xnew,ynew] = boundary(hspoly);        % just the boundary
+hspoly = polyshape(xnew,ynew);         % make a new polyshape
+[xlim,ylim] = boundingbox(hspoly);     % new boundingbox
 % if the weird stuff near the outlet is problematic, try reverting to using
 % xnew,ynew as the x/y coordinates of the merged hillslope
 

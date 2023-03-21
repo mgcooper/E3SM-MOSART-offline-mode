@@ -29,7 +29,7 @@ numbered using the hillsloper hs_id field.
 %% set paths
 
 path_domain_data = ...
-   getenv('USER_HILLSLOPER_DATA_PATH');
+   getenv('USER_MOSART_DOMAIN_DATA_PATH');
 
 path_domain_file_template = ...
    getenv('USER_MOSART_TEMPLATE_PATH');

@@ -1,6 +1,6 @@
 clean
 
-sitename = 'trib_basin';
+sitename = getenv('USER_MOSART_DOMAIN_NAME');
 opts = const('save_shp',true,'plot_links',true);
 
 % the reason this is needed is because the slopes are split into two from
@@ -15,10 +15,13 @@ opts = const('save_shp',true,'plot_links',true);
 % 'slopes' that is modified in b_makenewslopes isn't dealt with here
 % because it has two slopes per link.
 
+% also - the sag_basin version was much simpler, it is copied at the end in
+% stripped-down form, delete once confirmed
+
 %% set paths
 
-pathdata = setpath(['interface/hillsloper/' sitename '/newslopes/'],'data');
-pathsave = setpath(['interface/hillsloper/' sitename '/newslopes/'],'data');
+pathdata = getenv('USER_MOSART_DOMAIN_DATA_PATH');
+pathsave = fullfile(fileparts(getenv('USER_MOSART_DOMAIN_DATA_PATH')),'slopes');
 if ~exist(pathsave,'dir'); mkdir(pathsave); end
 
 %% this makes a shapefile of the hillslopes in lat-lon and x-y
@@ -98,8 +101,10 @@ for n = 1:numel(slopesgeo)
 
    ygeo = vertcat(ygeo,nan,linksgeo(n).Lat');
    xgeo = vertcat(xgeo,nan,linksgeo(n).Lon');
+   
+   %ID = [ID;nan;slopes(n).X_link'];
 end
-% note: can't add metdata b/c it's a single polyline, so write two files
+% note: can't add metdata (eg ID) b/c it's a single polyline, so write two files
 
 linegeo = geoshape;
 linegeo.Lat = ygeo;
@@ -114,20 +119,41 @@ linemap.Y = ymap;
 
 
 if opts.save_shp == true
-   writeGeoShapefile(slopesgeo,[pathsave 'slopes_mosart_geo.shp']);
-   writeGeoShapefile(linksgeo,[pathsave 'links_mosart_geo.shp']);
-   writeGeoShapefile(linegeo,[pathsave 'streams_mosart_geo.shp']);
+   writeGeoShapefile(slopesgeo,fullfile(pathsave,'slopes_mosart_geo.shp'));
+   writeGeoShapefile(linksgeo,fullfile(pathsave,'links_mosart_geo.shp'));
+   writeGeoShapefile(linegeo,fullfile(pathsave,'streams_mosart_geo.shp'));
 
-   shapewrite(slopesmap,[pathsave 'slopes_mosart_tmp_aka.shp']);
-   shapewrite(linksmap,[pathsave 'links_mosart_tmp_aka.shp']);
-   shapewrite(linemap,[pathsave 'streams_mosart_tmp_aka.shp']);
+   shapewrite(slopesmap,fullfile(pathsave,'slopes_mosart_tmp_aka.shp'));
+   shapewrite(linksmap,fullfile(pathsave,'links_mosart_tmp_aka.shp'));
+   shapewrite(linemap,fullfile(pathsave,'streams_mosart_tmp_aka.shp'));
 
-   %     shapewrite(slopesgeo,[pathsave 'slopes_mosart_tmp_geo.shp']);
-   %     shapewrite(linksgeo,[pathsave 'links_mosart_tmp_geo.shp']);
-   %     shapewrite(linegeo,[pathsave 'streams_mosart_tmp_geo.shp']);
-   %
-   %     shapewrite(slopesmap,[pathsave 'slopes_mosart_tmp_aka.shp']);
-   %     shapewrite(linksmap,[pathsave 'links_mosart_tmp_aka.shp']);
-   %     shapewrite(linemap,[pathsave 'streams_mosart_tmp_aka.shp']);
+%    shapewrite(slopesgeo,fullfile(pathsave,'slopes_mosart_tmp_geo.shp'));
+%    shapewrite(linksgeo,fullfile(pathsave,'links_mosart_tmp_geo.shp'));
+%    shapewrite(linegeo,fullfile(pathsave,'streams_mosart_tmp_geo.shp'));
+% 
+%    shapewrite(slopesmap,fullfile(pathsave,'slopes_mosart_tmp_aka.shp'));
+%    shapewrite(linksmap,fullfile(pathsave,'links_mosart_tmp_aka.shp'));
+%    shapewrite(linemap,fullfile(pathsave,'streams_mosart_tmp_aka.shp'));
 end
 
+
+% % here for reference just in case, the sag_basin version
+% pathdata = setpath('interface/data/hillsloper/sag_basin/');
+% pathsave = '/Users/coop558/mydata/e3sm/sag/hillsloper/IFSAR_hillslopes/';
+% load([pathdata 'mosart_hillslopes']);
+% slopes = mosart_hillslopes; clear mosart_hillslopes;
+% 
+% % go through and create one list of all links with nan-separators
+% x = []; y = []; ID = []; dnID = []; hsID = [];
+% for n = 1:length(slopes)
+%    y     = [y;nan;slopes(n).Y_link'];
+%    x     = [x;nan;slopes(n).X_link'];
+%    %     ID    = [ID;nan;slopes(n).X_link'];
+% end
+% % started to add ID etc., but doesn't work b/c it's a single polyline
+% links       = mapshape;
+% links.X     = x;
+% links.Y     = y;
+% if savedata == true
+%    shapewrite(links,[pathsave 'sag_links_mosart_tmp.shp']);
+% end
