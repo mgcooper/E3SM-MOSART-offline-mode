@@ -17,6 +17,8 @@ end
 
 A = A(hs_id(:));
 
+% total area should be 85839108.88 m2
+
 % this would return A as a table
 % A = A2;
 % A.area_m2_ = A1.area_m2_ + A2.area_m2_;

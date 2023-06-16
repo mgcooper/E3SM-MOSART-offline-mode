@@ -1,96 +1,87 @@
-function [newinfo,roff,roffMP] = makeAtsRunoff( ...
-                                 site_name, ...
-                                 fname_runoff_data, ...
-                                 fname_domain_data,...
-                                 path_runoff_files, ...
-                                 path_runoff_template, ...
-                                 save_files, ...
-                                 varargin)
+clean
+
+% this reads the ming pan runoff files and saves the data
+
+% This is not quite right for some reason ... I think I might need to multiply
+% the runoff by each hillslope araa, so instead, I just read in the data I saved
+% at the end of mk_ats_runoff and saved the ming pan runoff in the data/ folder
 
 
-opts = optionParser('make_backups',varargin(:));
+% -- temp hack to do above
+load('/Users/coop558/work/data/interface/ATS/huc0802_gauge15906000_frozen_a5/ats_pan_runoff.mat')
+runoff = removevars(runoff, 'ats');
+runoff = renamevars(runoff, 'pan', 'runoff');
+save('data/sag_ming_pan_runoff.mat','runoff');
+% -- temp hack to do above
+
+%% set the options
+
+savefile = false;
+sitename = 'trib_basin';
+
+% These two are used to get the hillslope areas, to convert the ming pan runoff
+% to basin m3/s
+atsrunID = 'huc0802_gauge15906000_frozen_a5';
+fname_hsarea_data = 'huc190604020802_gauge15906000_subcatch_area.xlsx';
+
+opts = const( ...
+   'savefile',savefile, ...
+   'sitename',sitename, ...
+   'startyear',1998, ...
+   'endyear',2002, ...
+   'runID',atsrunID);
+
+%% build paths
+
+% set the path to the template files - in this case the Ming Pan runoff files
+path_runoff_template = ...
+   fullfile( ...
+   getenv('USER_MOSART_RUNOFF_PATH'), ...
+   opts.sitename, ...
+   'mingpan');
+
+% set the filename for the output file
+path_runoff_save = ...
+   fullfile( ...
+   getenv('MATLAB_ACTIVE_PROJECT_DATA_PATH'), ...
+   ['mingpan_' opts.sitename]);
+
+% set the path to the runoff data - in this case the ats runoff
+path_runoff_data = ...
+   fullfile( ...
+   getenv('USER_ATS_DATA_PATH'), ...
+   opts.runID);
 
 % set the filename for the custom area data
-if nargin > 6
-   fname_area_data = varargin{1};
-end
+fname_hsarea_data = ...
+   fullfile( ...
+   path_runoff_data, fname_hsarea_data);
 
-%% load the hillsloper domain data
+%% read the ats table to get the hillslope areas
 
-load(fname_domain_data,'links');
-hs_id = [links.hs_id];
+hsarea = sum(combineHillslopeArea(fname_hsarea_data)); % m2
 
-% plot the hillsloper data if needed for debugging
-% plothillsloper(mosartslopes,links)
+%% read the ming pan runoff data
 
-%% create the output path if it doesn't exist
-
-if ~isfolder(path_runoff_files)
-   mkdir(path_runoff_files);
-end
-
-%% convert the ats data to a netcdf
-
-% read in the ats runoff spreadsheet 
-[roff,time,area] = prepAtsRunoff(fname_area_data,fname_runoff_data,hs_id);
-
+time = mkcalendar(datetime(1998,1,1), datetime(2002,12,31), caldays(1), "noleap");
 runyears = unique(year(time));
-[~,nyears,nslopes] = size(roff);
+numyears = numel(runyears);
 
-roffMP = nan(size(roff));    % initialize ats runoff
+runoff = nan(numel(time), 1);  % initialize runoff
 
-for n = 1:nyears
+for n = 1:numyears
 
    nyear = num2str(runyears(n));
-   fname = ['runoff_' site_name '_' nyear '.nc'];
-   fcopy = fullfile(path_runoff_template,fname); % finfo = ncinfo(fcopy);
-   fsave = fullfile(path_runoff_files,fname);
+   fname = ['runoff_' sitename '_' nyear '.nc'];
+   fdata = fullfile(path_runoff_template,fname); % finfo = ncinfo(fcopy);
 
-   % keep the ming pan runoff to compare with ATS
-   roffMP(:,n,:) = permute(ncread(fcopy,'QDRAI'),[3 2 1]);
-
-   if isfile(fsave) && opts.make_backups == true
-      fbackup = backupfilename(fsave);
-      copyfile(fsave,fbackup);
-   else
-      system(['cp ' fcopy ' ' fsave]);
-   end
-
-   % QDRAI
-   schem = ncinfo(fcopy,'QDRAI');
-   Qtemp = squeeze(roff(:,n,:));
-   QDRAI = nan(nslopes,1,365);
-   for m = 1:365
-      QDRAI(:,1,m) = Qtemp(m,:);
-   end
-
-   if save_files
-      % ncwriteschema isn't needed if the file exists, which it will with the
-      % system(cp) call above, unless i want to change the schema, which isn't
-      % done but there's no harm in keeping it
-      ncwriteschema(fsave,schem); 
-      ncwrite(fsave,'QDRAI',QDRAI);
-   end
-
-   % QOVER
-   schem = ncinfo(fcopy,'QOVER');
-   QOVER = 0.0.*QDRAI;
-
-   if save_files
-      ncwriteschema(fsave,schem);
-      ncwrite(fsave,'QOVER',QOVER);
-   end
-   newinfo = ncinfo(fsave);
+   [s, e] = chunkLoopInds(n, 1, 365);
+   runoff(s:e, 1) = sum(squeeze(permute(ncread(fdata,'QDRAI'),[3 2 1])),2);
 end
 
-% send back the ats and mingpan runoff as timetables of basin runoff in m3/s
-roff = reshape(roff,365*nyears,nslopes);
-roff = sum(roff.*area,2)/1000;
-roff = array2timetable(roff,'RowTimes',time);
-
-roffMP = reshape(roffMP,365*nyears,nslopes);
-roffMP = sum(roffMP.*area,2)/1000;
-roffMP = array2timetable(roffMP,'RowTimes',time);
+% convert to basin runoff in m3/s
+runoff = runoff.*hsarea/1000;
+runoff = array2timetable(runoff,'RowTimes',time);
 
 
 

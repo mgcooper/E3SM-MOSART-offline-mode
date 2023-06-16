@@ -18,8 +18,8 @@ if strcmp(sag.site_name,'test_basin')
    t2 = datetime(2017,1,1);
    Dtiles = mosart.D;
 elseif strcmp(sag.site_name,'trib_basin')
-   t1 = datetime(1997,1,1);
-   t2 = datetime(2003,12,31);
+   t1 = datetime(1998,1,1);
+   t2 = datetime(2002,12,31);
    Dtiles = mosart.D;
 else
    t1 = datetime(1983,1,1);

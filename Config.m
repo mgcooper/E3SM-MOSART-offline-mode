@@ -5,11 +5,16 @@ function Config(varargin)
 
 % set environment variables to find data
 
+% NOTE: For an ats runoff configuration, need to set:
+% USER_MOSART_DOMAIN_NAME
+% USER_ATS_VERSION
+% USER_ATS_DATA_PATH
+
 thispath = fileparts(mfilename('fullpath'));
 
 % domain name
 setenv('USER_MOSART_DOMAIN_NAME', ...
-   'sag_basin' ...
+   'trib_basin' ...
    );
 
 % root path where data exists
@@ -48,7 +53,7 @@ setenv('MOSART_TESTBED', ...
 
 % ATS output version
 setenv('USER_ATS_VERSION', ...
-   'huc0802_gauge15906000_nopf' ...
+   'huc0802_gauge15906000_frozen' ...
    );
 
 % path to ATS runoff data

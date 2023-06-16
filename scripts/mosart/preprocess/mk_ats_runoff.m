@@ -4,12 +4,12 @@ clean
 
 %% set the options
 
-savefile = true;
+savefile = false;
 sitename = 'trib_basin';
-atsrunID = 'huc0802_gauge15906000_nopf';
+atsrunID = 'huc0802_gauge15906000_frozen_a8';
 fname_domain_data = 'mosart_hillslopes.mat';
-fname_runoff_data = 'huc0802_gauge15906000_nopf_discharge_2D.xlsx';
-fname_hsarea_data = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
+fname_runoff_data = 'frozen_huc190604020802_gauge15906000_discharge_2D_a8.xlsx';
+fname_hsarea_data = 'huc190604020802_gauge15906000_subcatch_area.xlsx';
 
 opts = const( ...
    'savefile',savefile, ...
@@ -45,10 +45,20 @@ path_runoff_files = ...
    'ats', ...
    opts.runID);
 
+%% create folders if they do not exist
+
+if ~isfolder(path_runoff_data)
+   error('path_runoff_data does not exist')
+end
+
+if ~isfolder(path_runoff_files)
+   mkdir(path_runoff_files)
+end
+
 %% build filenames
 
 % set the filename for the custom area data
-fname_area_data = ...
+fname_hsarea_data = ...
    fullfile( ...
    path_runoff_data, fname_hsarea_data);
 
@@ -67,7 +77,6 @@ fname_domain_data = ...
 
 [newinfo,roffATS,roffMP] = makeAtsRunoff( ...
                            sitename, ...
-                           atsrunID, ...
                            fname_runoff_data, ...
                            fname_domain_data, ...
                            path_runoff_files, ...
@@ -87,6 +96,14 @@ CopyInfo = makeDummyRunoffFiles(sitename,opts.startyear,opts.endyear, ...
 % dat = dat+1;
 % ncwrite(['runoff_trib_basin_' num2str(n) '.nc'],'time',dat);
 
+%% save the data in .mat format
+
+runoff = synchronize(roffMP, roffATS);
+runoff = renamevars(runoff, ["roffMP", "roff"], ["pan", "ats"]);
+
+if savefile == true
+   save(fullfile(path_runoff_data, "ats_runoff.mat"), "runoff")
+end
 %% look at the result
 
 cd(path_runoff_template)

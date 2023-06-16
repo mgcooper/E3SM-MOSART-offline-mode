@@ -18,19 +18,7 @@ function mosart = mos_readoutput(pathdata,varargin)
 
 % parse inputs
 %--------------
-varnames = {'RIVER_DISCHARGE_OVER_LAND_LIQ'};
-filetypes = {'h1','h0'};
-validvars = @(x)any(validatestring(x,varnames));
-validfiles = @(x)any(validatestring(x,filetypes));
-
-p = inputParser;
-p.addRequired('pathdata',@(x)ischar(x));
-p.addOptional('varname','RIVER_DISCHARGE_OVER_LAND_LIQ',validvars);
-p.addOptional('filetype','h0',validfiles);
-p.parse(pathdata,varargin{:});
-args = p.Results;
-%-----------------
-
+[pathdata, args] = parseinputs(mfilename, pathdata, varargin{:});
 
 % main code
 flist = getlist(pathdata,['*.mosart.' args.filetype '*']);
@@ -242,6 +230,23 @@ end
 checkvars = allvars(~isallnanorzero);
 
 
+function [pathdata, args] = parseinputs(funcname, pathdata, varargin)
+
+varnames = {'RIVER_DISCHARGE_OVER_LAND_LIQ'};
+filetypes = {'h1','h0'};
+validvars = @(x)~isempty(validatestring(x,varnames));
+validfiles = @(x)~isempty(validatestring(x,filetypes));
+
+p = inputParser;
+p.FunctionName = funcname;
+p.addRequired('pathdata',@(x)ischar(x));
+p.addOptional('varname','RIVER_DISCHARGE_OVER_LAND_LIQ',validvars);
+p.addOptional('filetype','h0',validfiles);
+parse(p,pathdata,varargin{:});
+args = p.Results;
+
+
+
 function Discharge = readalldischarge(data,ndays,ncells)
 
 Dvars = { ...
@@ -305,12 +310,6 @@ for n = 1:nfiles
 end
 
 Discharge = array2table(Discharge,'VariableNames',Dvars);
-
-
-
-
-
-
 
 
 function tf = skipdata(thisdata)
