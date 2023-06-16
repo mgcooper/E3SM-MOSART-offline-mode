@@ -18,9 +18,15 @@ Dams = addDependentCells(Dams,DependentCells,oldDams);
 %% save it
 
 if savedata == true
-   save([pathsave 'icom_dams_dep_cells.mat'],'Dams');
-   writetable(Dams,[pathsave 'icom_dams_dep_cells.xlsx']);
+   save(fullfile(pathsave,'icom_dams_dep_cells.mat'),'Dams');
+   writetable(Dams,fullfile(pathsave,'icom_dams_dep_cells.xlsx'));
 end
+
+
+test = table2array(Dams(:,26:end));
+test = test(~isnan(test(:)));
+min(test)
+max(test)
 
 
 

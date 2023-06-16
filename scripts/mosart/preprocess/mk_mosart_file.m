@@ -6,8 +6,8 @@ sitename = 'icom';
 opts = const('savefile',false,'sitename',sitename);
 
 % set paths
-path_domain_data = getenv('USER_MOSART_DOMAIN_DATA_PATH');
-path_domain_file_template = getenv('USER_MOSART_TEMPLATE_PATH');
+path_domain_data = getenv('USER_E3SM_DOMAIN_DATA_PATH');
+path_domain_file_template = getenv('USER_E3SM_TEMPLATE_PATH');
 path_mosart_file_save = getenv('USER_E3SM_CONFIG_PATH');
 
 %% domain data - where hillsloper and hexwatershed differ
@@ -17,13 +17,13 @@ path_mosart_file_save = getenv('USER_E3SM_CONFIG_PATH');
 
 % option 1: load the json and do the processing
 % load(fullfile(path_domain_data,'hexwatershed.json'),'mosartslopes');
-% str = fileread(getenv('MESHJSONFILE'));
+% str = fileread(getenv('USER_HEXWATERSHED_MESH_JSONFILE_FULLPATH'));
 % data = jsondecode(str);
 
 % option 2: load the pre-processed mesh file
 
 % find mesh cell flow direction
-load(fullfile(getenv('USER_MOSART_DOMAIN_DATA_PATH'),'mpas_mesh.mat'),'Mesh');
+load(fullfile(getenv('USER_E3SM_DOMAIN_DATA_PATH'),'mpas_mesh.mat'),'Mesh');
 [ID,dnID] = hexmesh_dnID(Mesh);
 
 Mesh = addstructfields(Mesh,ID);

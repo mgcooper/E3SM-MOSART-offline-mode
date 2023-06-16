@@ -16,7 +16,8 @@ function makeMosartHexwatershed(fhex,ftem,fmos,varargin)
 %     plot_river: plot_river = true, plot the river network. Default = false
 %     plot_mesh: plot_mesh = true, plot the mesh. Default = false
 %
-% Author: Donghui Xu and Matt Cooper, 26-Jan-2023, https://github.com/mgcooper
+% Author: Matt Cooper, 26-Jan-2023, https://github.com/mgcooper
+% Based on code provided by Donghui Xu.
 
 % NOTE this is based on a file emailed from donghui. see his version here:
 % Setup-E3SM-Mac/matlab-scripts-to-process-inputs/generate_mosart_from_hexwatershed.m 
@@ -29,8 +30,8 @@ function makeMosartHexwatershed(fhex,ftem,fmos,varargin)
 %------------------------------------------------------------------------------
 % input parsing
 %------------------------------------------------------------------------------
-p                 = inputParser;
-p.FunctionName    = 'makeMosartHexwatershed';
+p = inputParser;
+p.FunctionName = mfilename;
 
 addRequired(p,    'fhex',                 @(x)ischarlike(x)    );
 addRequired(p,    'ftem',                 @(x)ischarlike(x)    );
@@ -72,8 +73,8 @@ fdir(dnID == -9999) = 0;
 
 % % this is from generate_hexagon_mesh_mosart which reads in hexwatershed.nc
 % which must have been preprocessed to have the Depth/Width variables
-% rdep   = ncread(hexfile,'Depth'); rdep = rdep ./ 10^2.4;
-% rwid   = ncread(hexfile,'Width'); rwid = rwid ./ 10^3.6;
+% rdep = ncread(hexfile,'Depth'); rdep = rdep ./ 10^2.4;
+% rwid = ncread(hexfile,'Width'); rwid = rwid ./ 10^3.6;
 
 % assign channel geometry
 if exist('channel_geometry.mat','file')

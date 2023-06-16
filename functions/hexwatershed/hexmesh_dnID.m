@@ -1,29 +1,27 @@
 function varargout = hexmesh_dnID(Mesh)
 %HEXMESH_DNID returns the ID and downstream ID (dnID) of each cell in Mesh.
 %Works for global Mesh or flowline Mesh
-% 
+%
 %  [ID,dnID] = HEXMESH_DNID(Mesh) returns cell ID and downstream cell ID lists
-% 
+%
 %  Mesh = HEXMESH_DNID(Mesh) returns Mesh with added fields cell_ID and
 %  cell_dnID
-% 
+%
 % Author: Matt Cooper, 04-Oct-2022, https://github.com/mgcooper
 
-%------------------------------------------------------------------------------
-% input parsing
-%------------------------------------------------------------------------------
-p              = inputParser;
-p.FunctionName = 'hexmesh_dnID';
-addRequired(p, 'Mesh',  @(x)isstruct(x));
-parse(p,Mesh);
-   
-%------------------------------------------------------------------------------
 
-cell_ID    = transpose([Mesh(:).lCellID]);
-cell_dnID  = transpose([Mesh(:).lCellID_downslope]);
+%--------------- input parsing
+p = inputParser;
+p.FunctionName = 'hexmesh_dnID';
+addRequired(p, 'Mesh', @(x)isstruct(x));
+parse(p,Mesh);
+
+%--------------- processing
+cell_ID = transpose([Mesh(:).lCellID]);
+cell_dnID = transpose([Mesh(:).lCellID_downslope]);
 
 % Convert ID
-N  = numel(cell_ID);
+N = numel(cell_ID);
 ID = transpose(1:N);
 dnID = NaN(N,1);
 

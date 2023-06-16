@@ -9,6 +9,8 @@ addRequired(   p, 'Mesh');
 addParameter(  p, 'FaceColor','none',@(x)ischar(x)|isnumeric(x));
 addParameter(  p, 'ZData',[],@(x)isnumeric(x));
 addParameter(  p, 'CData',[],@(x)isnumeric(x));
+addParameter(  p, 'LonFieldName','Lon',@(x)ischarlike(x));
+addParameter(  p, 'LatFieldName','Lat',@(x)ischarlike(x));
 addParameter(  p, 'FaceMapping','none',@(x)ischar(x));
 
 parse(p,Mesh,varargin{:});
@@ -17,6 +19,8 @@ FaceColor   = p.Results.FaceColor;
 FaceMapping = p.Results.FaceMapping;
 ZData       = p.Results.ZData;
 CData       = p.Results.CData;
+LonField    = p.Results.LonFieldName;
+LatField    = p.Results.LatFieldName;
 
 %------------------------------------------------------------------------------
 
@@ -76,7 +80,8 @@ if facemapping == false
    
    hold on;
    for n = 1:numel(Mesh)
-      patch('XData',Mesh(n).Lon,'YData',Mesh(n).Lat,'FaceColor',FaceColor(n,:));
+      patch('XData',Mesh(n).(LonField),'YData',Mesh(n).(LatField), ...
+         'FaceColor',FaceColor(n,:));
    end
    axis image
 
@@ -87,7 +92,7 @@ else
    [CData,idx] = sort(CData);
    hold on;
    for n = 1:numel(Mesh)
-      fill(Mesh(idx(n)).Lon,Mesh(idx(n)).Lat,CData(n));
+      fill(Mesh(idx(n)).(LonField),Mesh(idx(n)).(LatField),CData(n));
    end
    axis image
    colorbar;

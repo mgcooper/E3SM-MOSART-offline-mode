@@ -1,24 +1,24 @@
 function h = m_map_hexjson(json,Dams)
 
 
-ncells   = numel(json);
+ncells = numel(json);
 
 % init the colormap
-a        = cptcmap('GMT_red2green'); % cptcmap('SP08');
-a        = [(1:size(a,1))' a];
-range    = [0 1e10];
+a = cptcmap('GMT_red2green'); % cptcmap('SP08');
+a = [(1:size(a,1))' a];
+range = [0 1e10];
 
 % prep the dam capacity 
-damltln  = table2array(Dams(:,1:2)); 
-cap      = table2array(Dams(:,3));
-c        = table2cell(Dams(:,5));
+damltln = table2array(Dams(:,1:2)); 
+cap = table2array(Dams(:,3));
+c  = table2cell(Dams(:,5));
 
 % displacement so the text does not overlay the data points
-dx       = 0.01; 
-dy       = 0.01; 
+dx = 0.01; 
+dy = 0.01; 
 
 % make the figure
-f        = macfig;
+f = macfig;
 
 % set the projection
 m_proj('Equid','lon',[-79.2 -74],'lat',[39.4 43]); hold on
@@ -60,5 +60,5 @@ m_grid('linewi',1,'tickdir','in')
 
 
 h.figure = f;
-h.ax     = gca;
+h.ax = gca;
 

@@ -58,7 +58,7 @@ end
 datatable = atsmosarttable(mosart);
 if savedata == true
    fname = ['ats-mosart-' getenv('MOSART_RUNID') '.xlsx'];
-   fname = fullfile(getenv('MOSART_TESTBED'),fname);
+   fname = fullfile(getenv('MATLAB_ACTIVE_TESTBED_PATH'),fname);
    writetimetable(datatable,fname);
 end
 

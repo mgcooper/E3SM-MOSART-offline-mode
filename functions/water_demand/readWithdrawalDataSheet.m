@@ -1,14 +1,14 @@
 function Data = readWithdrawalDataSheet(filepath,sheet)
 %readWithdrawalDataSheet read the table of withdrawal data
 
-opts = detectImportOptions(filepath,'Sheet',sheet);
-Data = readfiles(filepath,'dataoutputtype','table','importopts',opts);
-Data = sortrows(Data,'BASIN_ID');
-hucID = unique(Data(:,'BASIN_ID'));
+fopts = detectImportOptions(filepath,'Sheet',sheet);
+iData = readfiles(filepath,'dataoutputtype','table','importopts',fopts);
+iData = sortrows(iData,'BASIN_ID');
+hucID = unique(iData(:,'BASIN_ID'));
 
 % reformat the data to a consistent time period
-yrmin = min(Data.YEAR);
-yrmax = max(Data.YEAR);
+yrmin = min(iData.YEAR);
+yrmax = max(iData.YEAR);
 Dates = datetime(yrmin,1,1):calyears(1):datetime(yrmax,1,1);
 
 nbasins = numel(hucID);
@@ -25,10 +25,10 @@ CUSW = nan(nyears,nbasins);
 for n = 1:nbasins
 
    % read the rows for this basin
-   idx = ismember(Data.BASIN_ID,hucID.BASIN_ID{n});
-   dat = Data(idx,:);
+   idx = ismember(iData.BASIN_ID,hucID.BASIN_ID{n});
+   dat = iData(idx,:);
 
-   % subset the GW and SW
+   % subset the GW and SW data for this basin, 
    try
       idxGW = dat.DESIGNATION == "GW";
       idxSW = dat.DESIGNATION == "SW";
@@ -52,8 +52,7 @@ for n = 1:nbasins
 
 end
 
-clear Data
-
+% package output
 vars = makevalidvarnames(hucID.BASIN_ID);
 Data.WDGW = array2timetable(WDGW,'RowTimes',Dates,'VariableNames',vars);
 Data.WDSW = array2timetable(WDSW,'RowTimes',Dates,'VariableNames',vars);

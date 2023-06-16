@@ -8,14 +8,14 @@ clc
 % 3 - repeat for MPAS domain mesh (~18,000 cells) if that can be found
 
 % set the pyhexwatershed output version
-hexvers  = 'mpas_c220107';
+hexvers = 'mpas_c220107';
 
 % set the search radius (meters)
 rxy = 10000;
 
 % add paths to inputs
 setpath(['icom/hexwatershed/' hexvers],'data');
-setpath('icom/dams/','data');
+setpath('icom/dams/matfiles','data');
 
 %% load the data
 

@@ -1,6 +1,6 @@
 clean
 
-% save the out-of-basin diversions by subbasin
+% save the DRBC out-of-basin diversions by subbasin
 
 % NOTE, I saved the out-of-basin diversions using the web map
 % https://www.state.nj.us/drbc/programs/supply/use-demand-projections2060.html
@@ -52,6 +52,25 @@ Diversions = array2timetable(Data,'RowTimes',Dates,'VariableNames',varnames);
 if savedata == true
    save(fullfile(pathsave,'diversions.mat'),'Diversions');
 end
+
+
+%%
+
+% added this june 2023 to write the table to file for tian
+
+% load('/Users/coop558/work/data/icom/DRBC/withdrawals/diversions.mat')
+
+% convert from MGD to m3/s
+Diversions.East_Branch_Delaware = mgd2cms(Diversions.East_Branch_Delaware);
+Diversions.Middle_DelawareMongaupBrodhead = mgd2cms(Diversions.Middle_DelawareMongaupBrodhead);
+Diversions.Middle_DelawareMusconetcong = mgd2cms(Diversions.Middle_DelawareMusconetcong);
+Diversions.Upper_Delaware = mgd2cms(Diversions.Upper_Delaware);
+
+writetable(Diversions,'DRBC_IBT_cms.xlsx')
+
+
+
+%% below here is in-basin demand
 
 % % this confirms the subbasin names match those in the shapefile:
 % basins = makevalidvarnames(unique({Basins.Meta.HUC8_Name}))';

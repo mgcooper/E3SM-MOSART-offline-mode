@@ -4,6 +4,30 @@
 # /compyfs/liao313/04model/pyhexwatershed/susquehanna/pyhexwatershed20220901016/
 
 # ------------------------------------------------------------
+# copy the gcam water demand data
+# ------------------------------------------------------------
+
+SRCPATH=$COMPY_ROOT_PATH/compyfs/zhou014/ICoM/GCAM_waterdemand_nc/rcp8.5
+DSTPATH=$E3SM_DATA_PATH/compyfs/inputdata/waterdemand
+SRCNAME=RCP8.5_GCAM_water_demand
+MONTHS=( 01 02 03 04 05 06 07 08 09 10 11 12 )
+# for i in "${arrayName[@]}"
+
+for year in {1981..2018}; do
+    # for month in 01 02 03 04 05 06 07 08 09 10 11 12; do
+    for month in "${MONTHS[@]}"; do
+
+        FILENAME=${SRCNAME}_${year}_${month}.nc
+
+        # TEST FIRST
+        # printf "%s\n" "$SRCPATH/$FILENAME"
+
+        # copy the files
+        rsync -a -e ssh -P "$SRCPATH/$FILENAME" "$DSTPATH/$FILENAME"
+    done
+done
+
+# ------------------------------------------------------------
 # copy an individual file to this directory:
 # ------------------------------------------------------------
 # SRCNAME=dlnd.streams.txt.lnd.gpcc.icom_mpas
@@ -108,6 +132,6 @@
 # copy the  ming pan runoff half-degree, daily
 # ------------------------------------------------------------
 
-SRCPATH=$COMPY_ROOT_PATH/compyfs/inputdata/lnd/dlnd7/mingpan
-DSTPATH=/Users/coop558/work/data/e3sm/compyfs/inputdata/lnd/dlnd7
-rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
+# SRCPATH=$COMPY_ROOT_PATH/compyfs/inputdata/lnd/dlnd7/mingpan
+# DSTPATH=/Users/coop558/work/data/e3sm/compyfs/inputdata/lnd/dlnd7
+# rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"

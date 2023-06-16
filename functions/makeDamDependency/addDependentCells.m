@@ -11,31 +11,30 @@ else
    refDams.Name = refDams.DAM_NAME;
 end
 
-D        = removevars(Dams,{'DAM_NAME','NIDID','PURPOSES','SOURCE'});
-vars     = gettablevarnames(D);
-D        = table2array(D);
-[nr,nc]  = size(D);
-ncells   = size(DependentCells,2);
-C        = nan(nr,ncells);
-D        = horzcat(D,C);
+Data = removevars(Dams,{'DAM_NAME','NIDID','PURPOSES','SOURCE'});
+Vars = gettablevarnames(Data);
+Data = table2array(Data);
+NumC = size(DependentCells,2);
+DepC = nan(size(Data,1),NumC);
+Data = horzcat(Data,DepC);
 
 for n = 1:height(refDams)
    idx = find(ismember(Dams.DAM_NAME,refDams.Name(n)));
-   D(idx,nc+1:end) = DependentCells(n,:);
+   Data(idx,size(Data,2)+1:end) = DependentCells(n,:);
 end
 
-for n = 1:ncells
-   vars{nc+n} = ['cells_' num2str(n)];
+for n = 1:NumC
+   Vars{size(Data,2)+n} = ['cells_' num2str(n)];
 end
 
-D = array2table(D,'VariableNames',vars);
+Data = array2table(Data,'VariableNames',Vars);
 
-D.DAM_NAME = Dams.DAM_NAME;
-D.NIDID = Dams.NIDID;
+Data.DAM_NAME = Dams.DAM_NAME;
+Data.NIDID = Dams.NIDID;
 
-D = movevars(D,{'DAM_NAME','NIDID'},'Before','LONGITUDE');
+Data = movevars(Data,{'DAM_NAME','NIDID'},'Before','LONGITUDE');
 
-Dams = D;
+Dams = Data;
 
 % % for reference, before I added the cells as rows to the table:
 % % add the dependent cells to the Dams table

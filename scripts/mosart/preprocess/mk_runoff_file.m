@@ -31,12 +31,12 @@ sitename = 'sag_basin';
 
 %% set paths
 pathdata = setpath(['interface/hillsloper/' sitename],'data');
-pathtemp = getenv('USER_MOSART_TEMPLATE_PATH');
+pathtemp = getenv('USER_E3SM_TEMPLATE_PATH');
 pathroff = setpath('e3sm/compyfs/inputdata/lnd/dlnd7/hcru_hcru','data');
 
 % normally would save here, but for comparing with mos_makerunoff, set below
 % pathsave = setpath('e3sm/forcing/sag_basin/','data');
-pathsave = getenv('USER_MOSART_TEMPLATE_PATH'); cd(pathsave);
+pathsave = getenv('USER_E3SM_TEMPLATE_PATH'); cd(pathsave);
 
 % fmosart isn't used but keep for now, I probably wanted to compare the var
 % sizes/shapes to frunoff, see info_mos below

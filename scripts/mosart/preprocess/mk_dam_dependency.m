@@ -42,17 +42,17 @@ rxy = 30000;
 hexvers = getenv('USER_HEXWATERSHED_VERSION');
 
 % load the mesh, flowline, and dams data
-load(fullfile(getenv('USER_MOSART_DOMAIN_DATA_PATH'),'mpas_mesh.mat'),'Mesh');
+load(fullfile(getenv('USER_E3SM_DOMAIN_DATA_PATH'),'mpas_mesh.mat'),'Mesh');
 load(fullfile(getenv('USER_PYFLOWLINE_DATA_PATH'),'mpas_flowline.mat'),'Line');
-load(fullfile(getenv('DAMSFILE')),'Dams');
-load(fullfile(getenv('BOUNDSFILE')),'latpoly','lonpoly');
+load(fullfile(getenv('USER_MOSART_DAMS_FILE_FULLPATH')),'Dams');
+load(fullfile(getenv('USER_E3SM_DOMAIN_BOUNDS_FILE_FULLPATH')),'latpoly','lonpoly');
 
 Dams.DAM_NAME(37) = {'MARSH CREEK'};
 
 % % can also use shaperead, but icom_dams.mat has more info
-% Mesh = shaperead(getenv('MESHFILE'),'UseGeoCoords',true);
-% Line = shaperead(getenv('LINEFILE'),'UseGeoCoords',true);
-% Dams = shaperead(getenv('DAMSFILE'),'UseGeoCoords',true);
+% Mesh = shaperead(getenv('USER_HEXWATERSHED_MESH_SHPFILE_FULLPATH'),'UseGeoCoords',true);
+% Line = shaperead(getenv('USER_HEXWATERSHED_FLOWLINE_SHPFILE_FULLPATH'),'UseGeoCoords',true);
+% Dams = shaperead(getenv('USER_MOSART_DAMS_SHPFILE_FULLPATH'),'UseGeoCoords',true);
 
 % clip the flowline to the bounds (for plotting, not needed for the algorithm)
 for n = 1:numel(Line)

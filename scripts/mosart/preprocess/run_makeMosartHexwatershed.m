@@ -11,8 +11,8 @@ clean
 
 
 sitename = 'icom';
-fhex = fullfile(getenv('USER_MOSART_DOMAIN_DATA_PATH'),'hexwatershed.json');
-ftem = fullfile(getenv('USER_MOSART_TEMPLATE_PATH'),'MOSART_icom_half_c200624.nc');
+fhex = fullfile(getenv('USER_E3SM_DOMAIN_DATA_PATH'),'hexwatershed.json');
+ftem = fullfile(getenv('USER_E3SM_TEMPLATE_PATH'),'MOSART_icom_half_c200624.nc');
 fout = fullfile(getenv('USER_E3SM_CONFIG_PATH'),['MOSART_' sitename '.nc']);
 fdom = fullfile(getenv('USER_E3SM_CONFIG_PATH'),['domain_' sitename '.nc']);
 

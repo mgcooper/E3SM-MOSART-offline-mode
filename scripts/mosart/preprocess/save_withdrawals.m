@@ -1,6 +1,6 @@
 clean
 
-% save the water withdrawal data by subbasin
+% save the DRBC water withdrawal data by subbasin
 
 % need to re-run this for all sheets
 
@@ -56,6 +56,8 @@ Meta = readfiles(filepath,'dataoutputtype','table','importopts',opts);
 
 % datasheets = sheets(5:end); % also Index.Table
 
+% Sheets below have BASIN_ID, DESIGNATION (GW vs SW), WD_MGD, CU_MGD columns
+
 % we may not want self-supplied domestic. also its the only one without the
 % SW/GW designation
 sheets_historic = { ...
@@ -69,18 +71,51 @@ sheets_historic = { ...
    'A-22', ... % other
    };
 
-for n = 2:numel(sheets_historic)
+% get all common headers - runs slow so below sets them
+% headers = readtableheaders(filepath,sheets_historic);
+headers = ["BASIN_ID","CATEGORY","CU_MGD","DESIGNATION","GWPA_ID","SECTOR", ...
+   "STATE","WD_MGD","YEAR"];
 
+% read the data
+for n = 1:numel(sheets_historic)
    sheet = sheets_historic{n};
    sector = cell2mat(Index.Sector(ismember(Index.Table,sheet)));
    Data.(sector) = readWithdrawalDataSheet(filepath,sheet);
 end
 
+%% check the data
 
-% OK I think the reason I only read A-1 is b/c its the one that represents
-% "total water use" but actually maybe not ... some sheets are not related to
-% water demand at all, such as A5 which is power generation, but others like A6
-% are the water demand by the power sector,
+% from the report, not considering out-of-basin diversions, the annual average
+% CU should be ~286 mgd, and they get CU by dividing WD by 10, so this shows
+% we're about on target b/c I did not save the SSD is not
+
+sectors = fieldnames(Withdrawals);
+WDSW_mgd = nan(size(Withdrawals.PWS.WDGW,1),numel(sectors));
+for n = 1:numel(sectors)
+   wdsw = table2array(Withdrawals.(sectors{n}).WDSW);
+   WDSW_mgd(:,n) = sum(wdsw,2,'omitnan');
+end
+
+% this shows the annual average CU is ~240 mgd so with SSD it would probably be
+% close to the reported value
+WDSW_mgd_Sum = rowsum(WDSW_mgd);
+mean(WDSW_mgd_Sum./10)
+
+
+
+%% save the data
+
+Withdrawals = Data;
+if savedata == true
+   save(fullfile(pathsave,'withdrawals'),'Withdrawals','Meta');
+end
+
+%%
+
+% I think the reason I only read A-1 originally is b/c I thought it was the
+% "total water use" but it is public water supply (PWS) so maybe not ... also
+% some sheets are not related to water demand at all, such as A5 which is power
+% generation, but others like A6 are the water demand by the power sector,
 %
 % I think I can loop over all sheets and exclude those without WD_MGD and/or
 % CU_MGD variable names. Also, MOD_WD_MGD and MOD_CU_MGD are the modeled
@@ -110,11 +145,7 @@ for n = 1:4
 end
 
 
-Withdrawals = Data;
 
-if savedata == true
-   save([pathsave 'withdrawals'],'Withdrawals','Meta');
-end
 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % macfig;
