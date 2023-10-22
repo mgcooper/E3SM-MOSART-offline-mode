@@ -8,24 +8,6 @@ plotgeo  = false;
 pathdata = getenv('USER_HILLSLOPER_DATA_PATH');
 pathsave = getenv('USER_MOSART_DOMAIN_DATA_PATH');
 
-switch sitename
-   case 'sag_basin'
-      fnametopo = 'IfSAR_5m_DTM_Alaska_Albers_Sag_basin.tif';
-   case 'trib_basin'
-      fnametopo = 'Sag_gage_HUC_filled.tif';
-   case 'test_basin'
-      fnametopo = 'huc_190604020404.tif';
-end
-fnametopo = fullfile(getenv('USER_DOMAIN_TOPO_DATA_PATH'),fnametopo);
-
-warning('off') % so polyshape stops complaining
-
-% v3 has one orphan link and otherwise appears to be ok so i just need to
-% confirm that the link-hs_id mapping is correct, then check if my methods to
-% reconstruct the flow network are correct, and if so I can archive the old
-% version of b_make_newslopes specific to v1 and move forward with a version
-% that works for each basin
-
 % note: this needs the DEM to be in planar coordinates to compute the area
 % of each hillslope, otherwise it would work with a geo dem i think
 
@@ -37,10 +19,22 @@ warning('off') % so polyshape stops complaining
 % area (provided with slopes)
 % slope (provided with links, but links and slopes are not associative)
 % elevation (not provided)
-% 
 
-%% read in the data
+%% Everything in this section replaced by readHillsloperData
 
+% warning('off') % so polyshape stops complaining
+
+switch sitename
+   case 'sag_basin'
+      fnametopo = 'IfSAR_5m_DTM_Alaska_Albers_Sag_basin.tif';
+   case 'trib_basin'
+      fnametopo = 'Sag_gage_HUC_filled.tif';
+   case 'test_basin'
+      fnametopo = 'huc_190604020404.tif';
+end
+fnametopo = fullfile(getenv('USER_DOMAIN_TOPO_DATA_PATH'),fnametopo);
+
+% read in the data
 flist = getlist(pathdata,'*.shp'); % {flist.name}'
 
 try % for sag_basin, links is file 3, nodes is 4, so need to use explicit method
@@ -68,7 +62,7 @@ Nnodes = length(nodes);
 Nlinks = length(links);
 Nslopes = length(slopes);
 
-%% convert strings to doubles
+% convert strings to doubles
 N = Nlinks;
 V = {'us_node_id','ds_node_id','ds_da_km2','us_da_km2','slope','len_km','hs_id'};
 for n = 1:length(V)
@@ -98,12 +92,11 @@ for n = 1:length(V)
    end
 end
 
+%% Everything in this section replaced by slopesaqc
 
-
-
-
-
-%%
+% TLDR: there is one "orphan" link, link_ID = 1391, which is in hs_ID = 427 in
+% the basins table, but there is no 427 in the hillslopes table, so basically,
+% link_ID 1391 and basin 427 need to be removed, and link 
 
 % the new links have hs_id field, one is nan
 count = cellfun(@numel,{links.hs_id});
@@ -143,7 +136,9 @@ figure;
 figure; plot(lon,lat);
 plot(links(isnan([links.hs_id])).Lon,links(isnan([links.hs_id])).Lat)
 
-%% process the DEM
+%% Everything in this section replaced by computeHillsloperTopo
+
+% process the DEM
 
 % this takes forever so do it here once
 
@@ -308,7 +303,7 @@ for n = 1:length(links)
 end
 
 
-%%%%% MOVED THE STR2DOUBLE STUFF FROM HERE UP TOP
+%% Everything in this section replaced by mapslopes
 
 
 % plot using mapshow
@@ -336,92 +331,6 @@ if plotgeo == true
 end
 
 %% save the data
-
 if savedata == true
    save(fullfile(pathsave,'sag_hillslopes'),'slopes','links','nodes');
 end
-
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-% below here was a script i started before realling the workflow i had set
-% up ... i wrote the one below from the mosart/preprocess folder then
-% remembered that the hillsloper processing was in the hillsloper folder so
-% i moved that one into the mosart folder to avoid confusion later
-
-% clean
-%
-% % started this feb 2022 to build an input file for the huc 12, few things
-% % to note: there are scripts here and there are scripts itn eh mosart
-% % preprocess folder, bit confusing to hvae them spread out. the 'hs_id'
-% % field is the key, and i don't think i got that for the huc 12 from jon
-%
-% save_data   = false;
-% plot_map    = false;
-% path.data   = ['/Users/coop558/mydata/interface/sag_basin/hillsloper/' ...
-%                     'old/hillsloper-master-4/Data/huc_190604020404/'];
-%
-% % read the data
-% slopes      = shaperead([path.data 'huc_190604020404_hillslopes.shp']);
-% nodes       = shaperead([path.data 'huc_190604020404_nodes.shp']);
-% links       = shaperead([path.data 'huc_190604020404_links.shp']);
-%
-% slopes      = renameStructField2(slopes,'X','Lon');
-% slopes      = renameStructField2(slopes,'Y','Lat');
-% nodes       = renameStructField2(nodes,'X','Lon');
-% nodes       = renameStructField2(nodes,'Y','Lat');
-% links       = renameStructField2(links,'X','Lon');
-% links       = renameStructField2(links,'Y','Lat');
-%
-% figure;
-% geoshow(slopes); hold on;
-% geoshow(links)
-% geoshow(nodes);
-%
-% % [newlinks,inlet_ID,outlet_ID] = mos_make_newlinks(links,nodes);
-%
-% N = length(links);
-% V = {'us_node_id','ds_node_id','ds_da_km2','us_da_km2','slope','len_km'};
-% for i = 1:length(V)
-%     vi                  = V{i};
-%     di                  = num2cell(cellfun(@str2double,{links.(vi)}));
-%     [links(1:N).(vi)]   = di{:};
-% end
-%
-% % nodes is more complicated, because some fields have multiple values
-% N = length(nodes); V = {'hs_id','conn','da_km2'};
-% for i = 1:length(V)
-%     di = {nodes.(V{i})};
-%     for j = 1:length(di)
-%         [nodes(j).(V{i})] = str2double(strsplit(di{j},','));
-%     end
-% end
-
-
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
-
-
-
-
-% for reference, this is the method that used inpolygon
-% % i need the coordinates of the dem pixels
-% [xdem,ydem] = pixcenters(R,R.RasterSize(1),R.RasterSize(2));
-% [X,Y]       = meshgrid(xdem,ydem);
-% Xrs         = reshape(X,size(X,1)*size(X,2),1);
-% Yrs         = reshape(Y,size(Y,1)*size(Y,2),1);
-%
-% % reshape dem and slope then discard the objects
-% elev        = double(reshape(DEM.Z,size(DEM.Z,1)*size(DEM.Z,2),1));
-% slope       = double(reshape(G.Z,size(G.Z,1)*size(G.Z,2),1));
-%
-% clear xdem ydem X Y DEM G
-% % this confirms that inpolygon works as expected
-% % in        = inpolygon(Xrs,Yrs,x,y);
-% % figure; plot(x,y); hold on; plot(Xrs(in),Yrs(in),'.')
-
-% % and then inside the loop:
-% hsidx       = inpolygon(Xrs,Yrs,x,y);           % dem pixels inside hs
-% hslp        = roundn(mean(elev(hsidx)),-4);
-% helev       = roundn(mean(elev(hsidx)),-4);
