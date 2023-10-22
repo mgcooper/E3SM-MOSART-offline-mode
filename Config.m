@@ -5,6 +5,8 @@ function Config(varargin)
 
 % set environment variables to find data
 
+% NOTE: _v2 is the latest hillsloper
+
 % NOTE: For an ats runoff configuration, need to set:
 % USER_MOSART_DOMAIN_NAME
 % USER_ATS_VERSION
@@ -14,7 +16,7 @@ thispath = fileparts(mfilename('fullpath'));
 
 % domain name
 setenv('USER_MOSART_DOMAIN_NAME', ...
-   'trib_basin' ...
+   'sag_basin' ...
    );
 
 % root path where data exists
@@ -69,12 +71,12 @@ switch getenv('USER_MOSART_DOMAIN_NAME')
       % hillsloper data files
       setenv('USER_HILLSLOPER_DATA_PATH', ...
          ['/Users/coop558/work/data/interface/hillsloper/sag_basin/' ...
-         'IFSAR-Hillslopes-v3']);
+         'IFSAR-Hillslopes-v2']);
 
       % post-processed hillsloper (used to define the mosart domain)
       setenv('USER_MOSART_DOMAIN_DATA_PATH', ...
          ['/Users/coop558/work/data/interface/hillsloper/sag_basin/' ...
-         'IFSAR-Hillslopes-v3/mosart']);
+         'IFSAR-Hillslopes-v2/mosart']);
       
       % elevation data
       setenv('USER_DOMAIN_TOPO_DATA_PATH', ...

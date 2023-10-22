@@ -1,357 +1,347 @@
 function [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
-%MOS_MAKERUNOFF
-% 
-%     [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
-% 
-% Inputs
-% 
-%   'slopes' a structure with the following fields:
-%       longxy  = latitude of computational unit, scalar
-%       latixy  = longitude of computational unit, scalar
-%       area    = area in m2
-% 
-%     'opts'
-%        inputGridded
-%        outputGridded
-%        save_file
+   %MOS_MAKERUNOFF
+   %
+   %  [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
+   %
+   % Inputs
+   %
+   %   'slopes' a structure with the following fields:
+   %       longxy  = latitude of computational unit, scalar
+   %       latixy  = longitude of computational unit, scalar
+   %       area    = area in m2
+   %
+   %     'opts'
+   %        inputGridded
+   %        outputGridded
+   %        save_file
+   %
+   % See also:
 
+   % Unlike mos_makemosart and mos_makedomain, this function doesn't
+   % use any information from the hillslopes structure except for the position
+   % information which is used to interpolate the runoff to the slopes
 
-% Unlike mos_makemosart and mos_makedomain, this function doesn't
-% use any information from the hillslopes structure except for the position
-% information which is used to interpolate the runoff to the slopes
+   % % For reference:
+   % QDRAI subsurface runoff, mm/s
+   % QOVER surface runoff, mm/s
+   % QRUNOFF total runoff, mm/s
 
-% % For reference:
-% QDRAI subsurface runoff, mm/s
-% QOVER surface runoff, mm/s
-% QRUNOFF total runoff, mm/s
+   % GPCC.daily.nc
+   % QDRAI
+   % QOVER
+   % QRUNOFF
 
-% GPCC.daily.nc
-% QDRAI
-% QOVER
-% QRUNOFF
+   % GPCC.daily.runoff.1979-2008.nc
+   % QDRAI
+   % QOVER
 
-% GPCC.daily.runoff.1979-2008.nc
-% QDRAI
-% QOVER
-
-% if the input forcing is gridded, call the gridded function
-if opts.inputGridded
-
-   [schema,info,data] = griddedRunoff(slopes,frunoff,fdomain,fsave,opts);
-
-else
-
-   [schema,info,data] = listedRunoff(slopes,frunoff,fdomain,fsave,opts);
-
+   % if the input forcing is gridded, call the gridded function
+   if opts.inputGridded
+      [schema,info,data] = griddedRunoff(slopes,frunoff,fdomain,fsave,opts);
+   else
+      [schema,info,data] = listedRunoff(slopes,frunoff,fdomain,fsave,opts);
+   end
 end
 
-
-%-------------------------------------------------------------------------------
+%%
 function [schema,info,data] = listedRunoff(slopes,frunoff,fdomain,fsave,opts)
 
-% not implemented, instead i use a gridded runoff file as a template and
-% simply replace the gridded data with listed (unstructured) data
+   % not implemented, instead i use a gridded runoff file as a template and
+   % simply replace the gridded data with listed (unstructured) data
+end
 
-
-%-------------------------------------------------------------------------------
+%%
 function [schema,info,data] = griddedRunoff(slopes,frunoff,fdomain,fsave,opts)
-% works with ming pan sag_YYYY_mosart.nc and GPCC.daily.nc
-% % read the hillslope lat/lon, ID, and downstream ID
-ID      = [slopes.ID];
-lat     = [slopes.lat];
-lon     = [slopes.lon];
+   % works with ming pan sag_YYYY_mosart.nc and GPCC.daily.nc
+   % % read the hillslope lat/lon, ID, and downstream ID
+   ID      = [slopes.ID];
+   lat     = [slopes.lat];
+   lon     = [slopes.lon];
 
-% read the runoff dataset
-varInfo     = ncinfo(frunoff);
-varNames    = {varInfo.Variables.Name};
-data        = ncreaddata(frunoff,varNames);
+   % read the runoff dataset
+   varInfo     = ncinfo(frunoff);
+   varNames    = {varInfo.Variables.Name};
+   data        = ncreaddata(frunoff,varNames);
 
-% read the lat/lon
-[LON,LAT]   = meshgrid(data.lon,data.lat);
-LAT         = flipud(LAT);
+   % read the lat/lon
+   [LON,LAT]   = meshgrid(data.lon,data.lat);
+   LAT         = flipud(LAT);
 
-% this ensures they are both wrapped to 360
-lon         = wrapTo360(lon);
-LON         = wrapTo360(LON);
+   % this ensures they are both wrapped to 360
+   lon         = wrapTo360(lon);
+   LON         = wrapTo360(LON);
 
-% check which runoff vars are provided
-% QDRAI subsurface runoff, mm/s
-% QOVER surface runoff, mm/s
-% QRUNOFF total runoff, mm/s
-newVars     = {'QRUNOFF','QDRAI','QOVER'};
-hasQRUNOFF  = false;
-hasQDRAI    = false;
-hasQOVER    = false;
-% this is probably here for compatibility with ming pan and GPCC files
-if isfield(data,'QRUNOFF'); hasQRUNOFF  = true; end
-if isfield(data,'QDRAI');   hasQDRAI    = true; end
-if isfield(data,'QOVER');   hasQOVER    = true; end
+   % check which runoff vars are provided
+   % QDRAI subsurface runoff, mm/s
+   % QOVER surface runoff, mm/s
+   % QRUNOFF total runoff, mm/s
+   newVars     = {'QRUNOFF','QDRAI','QOVER'};
+   hasQRUNOFF  = false;
+   hasQDRAI    = false;
+   hasQOVER    = false;
+   % this is probably here for compatibility with ming pan and GPCC files
+   if isfield(data,'QRUNOFF'); hasQRUNOFF  = true; end
+   if isfield(data,'QDRAI');   hasQDRAI    = true; end
+   if isfield(data,'QOVER');   hasQOVER    = true; end
 
-hasVars = [hasQRUNOFF,hasQDRAI,hasQOVER];
+   hasVars = [hasQRUNOFF,hasQDRAI,hasQOVER];
 
-% this checks if the forcing is all in QRUNOFF, QDRAI, QOVER, or split
-% between QDRAI and QOVER. it isn't a comprehensive check and needs to
-% be fixed at some point
-if hasQRUNOFF
-   Runoff = permute(data.QRUNOFF,[2,1,3]);
+   % this checks if the forcing is all in QRUNOFF, QDRAI, QOVER, or split
+   % between QDRAI and QOVER. it isn't a comprehensive check and needs to
+   % be fixed at some point
+   if hasQRUNOFF
+      Runoff = permute(data.QRUNOFF,[2,1,3]);
 
-elseif hasQDRAI && ~hasQOVER
-   Runoff = permute(data.QDRAI,[2,1,3]);
+   elseif hasQDRAI && ~hasQOVER
+      Runoff = permute(data.QDRAI,[2,1,3]);
 
-elseif hasQOVER && ~hasQDRAI
-   Runoff = permute(data.QOVER,[2,1,3]);
+   elseif hasQOVER && ~hasQDRAI
+      Runoff = permute(data.QOVER,[2,1,3]);
 
-elseif hasQOVER && hasQDRAI
-   Rover  = permute(data.QOVER,[2,1,3]);
-   Rdrain = permute(data.QDRAI,[2,1,3]);
-   Runoff = Rover + Rdrain;
-else
-   error('runoff data not recognized');
+   elseif hasQOVER && hasQDRAI
+      Rover  = permute(data.QOVER,[2,1,3]);
+      Rdrain = permute(data.QDRAI,[2,1,3]);
+      Runoff = Rover + Rdrain;
+   else
+      error('runoff data not recognized');
+   end
+
+   Runoff  = flipud(Runoff);
+   LON     = LON(:);
+   LAT     = LAT(:);
+
+   if opts.outputGridded == true
+      [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
+         lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts);
+   else
+      [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT, ...
+         lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts);
+   end
 end
 
-Runoff  = flipud(Runoff);
-LON     = LON(:);
-LAT     = LAT(:);
-
-if opts.outputGridded == true
-   [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
-      lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts);
-
-else
-   [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT, ...
-      lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts);
-end
-
-
-
-
-%-------------------------------------------------------------------------------
+%%
 function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
-   lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts)
+      lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts)
 
-% interpolate across days the input runoff to the hillslope units
-nCells = numel(lat);
-nDays = size(Runoff,3);
-newR  = scatteredInterpolation(LON,LAT,reshape(Runoff,[],nDays),lon,lat);
-% lon = wrapTo180(lon);   % unwrap it (don't think I need this anymore)
+   % interpolate across days the input runoff to the hillslope units
+   nCells = numel(lat);
+   nDays = size(Runoff,3);
+   newR  = scatteredInterpolation(LON,LAT,reshape(Runoff,[],nDays),lon,lat);
+   % lon = wrapTo180(lon);   % unwrap it (don't think I need this anymore)
 
-% need a general way to deal with redistributing QRUNOFF to QDRAI/OVER
-% but for now put it all in QDRAI
-newData.QRUNOFF = zeros(size(newR));
-newData.QDRAI   = newR;
-newData.QOVER   = zeros(size(newR));
+   % need a general way to deal with redistributing QRUNOFF to QDRAI/OVER
+   % but for now put it all in QDRAI
+   newData.QRUNOFF = zeros(size(newR));
+   newData.QDRAI   = newR;
+   newData.QOVER   = zeros(size(newR));
 
-% WRITE THE NEW FILE
-if opts.save_file
+   % WRITE THE NEW FILE
+   if opts.save_file
 
-   % delete the file if it exists, otherwise there will be errors
-   if isfile(fsave); delete(fsave); end
+      % delete the file if it exists, otherwise there will be errors
+      if isfile(fsave); delete(fsave); end
 
-   % copy over these vars from the domain file to the runoff file
-   %copyVars    = {'xc','yc','mask','area','frac'};
-   copyVars    = {'xc','yc'};
-   %renameVars  = {'lon','lat'};
-   renameVars  = {'xc','yc'};
-   renameNames = {'longitude','latitude'};
+      % copy over these vars from the domain file to the runoff file
+      %copyVars    = {'xc','yc','mask','area','frac'};
+      copyVars    = {'xc','yc'};
+      %renameVars  = {'lon','lat'};
+      renameVars  = {'xc','yc'};
+      renameNames = {'longitude','latitude'};
 
-   for n = 1:numel(copyVars)
+      for n = 1:numel(copyVars)
 
-      copyVar     = copyVars{n};
-      copySchema  = ncinfo(fdomain,copyVar);
-      copyData    = ncread(fdomain,copyVar);
+         copyVar     = copyVars{n};
+         copySchema  = ncinfo(fdomain,copyVar);
+         copyData    = ncread(fdomain,copyVar);
 
-      copySchema.Name             = renameVars{n};
-      copySchema.Attributes(3)    = [];
+         copySchema.Name             = renameVars{n};
+         copySchema.Attributes(3)    = [];
 
-      % add a standard name field
-      newAtts             = copySchema.Attributes;
-      newAtts(3).Name     = newAtts(2).Name;
-      newAtts(3).Value    = newAtts(2).Value;
-      newAtts(2).Name     = newAtts(1).Name;
-      newAtts(2).Value    = newAtts(1).Value;
-      newAtts(1).Name     = 'standard_name';
-      newAtts(1).Value    = renameNames{n};
+         % add a standard name field
+         newAtts             = copySchema.Attributes;
+         newAtts(3).Name     = newAtts(2).Name;
+         newAtts(3).Value    = newAtts(2).Value;
+         newAtts(2).Name     = newAtts(1).Name;
+         newAtts(2).Value    = newAtts(1).Value;
+         newAtts(1).Name     = 'standard_name';
+         newAtts(1).Value    = renameNames{n};
 
-      copySchema.Attributes   = newAtts;
+         copySchema.Attributes   = newAtts;
 
-      ncwriteschema(fsave,copySchema);
-      ncwrite(fsave,renameVars{n},copyData);
+         ncwriteschema(fsave,copySchema);
+         ncwrite(fsave,renameVars{n},copyData);
+      end
+
+      % add a time variable
+      timeData            = ncread(frunoff,'time');
+      timeSchema          = ncinfo(frunoff,'time');
+      timeSchema.Format   = copySchema.Format;
+
+      ncwriteschema(fsave,timeSchema);
+      ncwrite(fsave,'time',timeData);
+
+      % now add the runoff data, using the 'xc' variable as a template
+      newSchema                           = ncinfo(fdomain,'xc');
+      newSchema.Size                      = [nCells,1,nDays];
+      newSchema.Dimensions(3).Name        = 'time';
+      newSchema.Dimensions(3).Length      = nDays;
+      newSchema.Dimensions(3).Unlimited   = false;
+      newSchema.Attributes(3)             = [];
+
+      % modify values that change for each variable, and write the new data
+      for n = 1:numel(newVars)
+
+         thisVar     = newVars{n};
+
+         % this works as long as I put the data in a var that existed in
+         % the frunoff file
+         if hasVars(n) == false
+            continue
+         end
+
+         % this copies the standard name and units
+         oldSchema                       = ncinfo(frunoff,thisVar);
+         newSchema.Name                  = thisVar;
+         newSchema.Attributes(1).Name    = oldSchema.Attributes(1).Name;
+         newSchema.Attributes(1).Value   = oldSchema.Attributes(1).Value;
+         newSchema.Attributes(2).Name    = oldSchema.Attributes(2).Name;
+         newSchema.Attributes(2).Value   = oldSchema.Attributes(2).Value;
+
+         % this is the easiest way to get the 2-d matlab var into ni,nj,time
+         Qtmp = nan(nCells,1,nDays);
+         for m = 1:365
+            Qtmp(:,1,m) = newData.(thisVar)(:,m);
+         end
+
+         if opts.save_file
+            ncwriteschema(fsave,newSchema);
+            ncwrite(fsave,thisVar,Qtmp);
+         end
+      end
+
+      % read in the new file to compare with the old file
+      schema  = newSchema;
+      info    = ncinfo(fsave);
+      data    = ncreaddata(fsave);
+   else
+      schema  = [];
+      info    = 'file not written, see newschema';
+      data    = [];
    end
-
-   % add a time variable
-   timeData            = ncread(frunoff,'time');
-   timeSchema          = ncinfo(frunoff,'time');
-   timeSchema.Format   = copySchema.Format;
-
-   ncwriteschema(fsave,timeSchema);
-   ncwrite(fsave,'time',timeData);
-
-   % now add the runoff data, using the 'xc' variable as a template
-   newSchema                           = ncinfo(fdomain,'xc');
-   newSchema.Size                      = [nCells,1,nDays];
-   newSchema.Dimensions(3).Name        = 'time';
-   newSchema.Dimensions(3).Length      = nDays;
-   newSchema.Dimensions(3).Unlimited   = false;
-   newSchema.Attributes(3)             = [];
-
-   % modify values that change for each variable, and write the new data
-   for n = 1:numel(newVars)
-
-      thisVar     = newVars{n};
-
-      % this works as long as I put the data in a var that existed in
-      % the frunoff file
-      if hasVars(n) == false
-         continue
-      end
-
-      % this copies the standard name and units
-      oldSchema                       = ncinfo(frunoff,thisVar);
-      newSchema.Name                  = thisVar;
-      newSchema.Attributes(1).Name    = oldSchema.Attributes(1).Name;
-      newSchema.Attributes(1).Value   = oldSchema.Attributes(1).Value;
-      newSchema.Attributes(2).Name    = oldSchema.Attributes(2).Name;
-      newSchema.Attributes(2).Value   = oldSchema.Attributes(2).Value;
-
-      % this is the easiest way to get the 2-d matlab var into ni,nj,time
-      Qtmp = nan(nCells,1,nDays);
-      for m = 1:365
-         Qtmp(:,1,m) = newData.(thisVar)(:,m);
-      end
-
-      if opts.save_file
-         ncwriteschema(fsave,newSchema);
-         ncwrite(fsave,thisVar,Qtmp);
-      end
-   end
-
-   % read in the new file to compare with the old file
-   schema  = newSchema;
-   info    = ncinfo(fsave);
-   data    = ncreaddata(fsave);
-else
-   schema  = [];
-   info    = 'file not written, see newschema';
-   data    = [];
 end
 
-
-%-------------------------------------------------------------------------------
+%%
 function [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
-   lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts)
+      lon,lat,hasVars,newVars,frunoff,fdomain,fsave,opts)
 
-% if output is gridded then no interpolation is needed
+   % if output is gridded then no interpolation is needed
 
-%     % interpolate across days the input runoff to the hillslope units
-%     nDays   = size(Runoff,3);
-%     newR    = nan(nCells,nDays);
-%     for n = 1:nDays
-%         thisR     = tocolumn(Runoff(:,:,n));
-%         newR(:,n) = scatteredInterpolation(LON,LAT,thisR,lon,lat);
-%     end
-%   % lon     = wrapTo180(lon);   % unwrap it (don't think I need this anymore)
-%
-%     nRows   = size(Runoff,1);
-%     nCols   = size(Runoff,2);
-%     if opts.outputGridded == true
-%         newR    = reshape(newR,nRows,nCols,nDays);
-%     end
+   %     % interpolate across days the input runoff to the hillslope units
+   %     nDays   = size(Runoff,3);
+   %     newR    = nan(nCells,nDays);
+   %     for n = 1:nDays
+   %         thisR     = tocolumn(Runoff(:,:,n));
+   %         newR(:,n) = scatteredInterpolation(LON,LAT,thisR,lon,lat);
+   %     end
+   %   % lon     = wrapTo180(lon);   % unwrap it (don't think I need this anymore)
+   %
+   %     nRows   = size(Runoff,1);
+   %     nCols   = size(Runoff,2);
+   %     if opts.outputGridded == true
+   %         newR    = reshape(newR,nRows,nCols,nDays);
+   %     end
 
-nCells = numel(lon);
+   nCells = numel(lon);
 
-% need a general way to deal with redistributing QRUNOFF to QDRAI/OVER
-% but for now put it all in QDRAI
-newData.QRUNOFF = zeros(size(newR));
-newData.QDRAI   = newR;
-newData.QOVER   = zeros(size(newR));
+   % need a general way to deal with redistributing QRUNOFF to QDRAI/OVER
+   % but for now put it all in QDRAI
+   newData.QRUNOFF = zeros(size(newR));
+   newData.QDRAI   = newR;
+   newData.QOVER   = zeros(size(newR));
 
-% WRITE THE NEW FILE
-if opts.save_file
+   % WRITE THE NEW FILE
+   if opts.save_file
 
-   % delete the file if it exists, otherwise there will be errors
-   if exist(fsave,'file'); delete(fsave); end
+      % delete the file if it exists, otherwise there will be errors
+      if exist(fsave,'file'); delete(fsave); end
 
-   % copy over these vars from the domain file to the runoff file
-   %copyVars    = {'xc','yc','mask','area','frac'};
-   copyVars    = {'xc','yc'};
-   %renameVars  = {'lon','lat'};
-   renameVars  = {'xc','yc'};
+      % copy over these vars from the domain file to the runoff file
+      %copyVars    = {'xc','yc','mask','area','frac'};
+      copyVars    = {'xc','yc'};
+      %renameVars  = {'lon','lat'};
+      renameVars  = {'xc','yc'};
 
-   for n = 1:numel(copyVars)
+      for n = 1:numel(copyVars)
 
-      copyVar     = copyVars{n};
-      copySchema  = ncinfo(fdomain,copyVar);
-      copyData    = ncread(fdomain,copyVar);
+         copyVar     = copyVars{n};
+         copySchema  = ncinfo(fdomain,copyVar);
+         copyData    = ncread(fdomain,copyVar);
 
 
-      copySchema.Name             = renameVars{n};
-      copySchema.Attributes(3)    = [];
+         copySchema.Name             = renameVars{n};
+         copySchema.Attributes(3)    = [];
 
-      ncwriteschema(fsave,copySchema);
-      ncwrite(fsave,renameVars{n},copyData);
+         ncwriteschema(fsave,copySchema);
+         ncwrite(fsave,renameVars{n},copyData);
+      end
+
+      % add a time variable
+      timeData            = ncread(frunoff,'time');
+      timeSchema          = ncinfo(frunoff,'time');
+      timeSchema.Format   = copySchema.Format;
+
+      ncwriteschema(fsave,timeSchema);
+      ncwrite(fsave,'time',timeData);
+
+      % now add the runoff data, using the 'xc' variable as a template
+      newSchema                           = ncinfo(fdomain,'xc');
+      newSchema.Size                      = [nCells,1,nDays];
+      newSchema.Dimensions(3).Name        = 'time';
+      newSchema.Dimensions(3).Length      = nDays;
+      newSchema.Dimensions(3).Unlimited   = false;
+      newSchema.Attributes(3)             = [];
+
+      % modify values that change for each variable, and write the new data
+      for n = 1:numel(newVars)
+
+         thisVar     = newVars{n};
+
+         % this works as long as I put the data in a var that existed in
+         % the frunoff file
+         if hasVars(n) == false
+            continue
+         end
+
+         % this copies the standard name and units
+         oldSchema                       = ncinfo(frunoff,thisVar);
+         newSchema.Name                  = thisVar;
+         newSchema.Attributes(1).Name    = oldSchema.Attributes(1).Name;
+         newSchema.Attributes(1).Value   = oldSchema.Attributes(1).Value;
+         newSchema.Attributes(2).Name    = oldSchema.Attributes(2).Name;
+         newSchema.Attributes(2).Value   = oldSchema.Attributes(2).Value;
+
+         % this is the easiest way to get the 2-d matlab var into ni,nj,time
+         Qtmp = nan(nCells,1,nDays);
+         for m = 1:365
+            Qtmp(:,1,m) = newData.(thisVar)(:,m);
+         end
+
+         if opts.save_file
+            ncwriteschema(fsave,newSchema);
+            ncwrite(fsave,thisVar,Qtmp);
+         end
+      end
+
+      % read in the new file to compare with the old file
+      schema  = newSchema;
+      info    = ncinfo(fsave);
+      data    = ncreaddata(fsave);
+   else
+      schema  = [];
+      info    = 'file not written, see newschema';
+      data    = [];
    end
-
-   % add a time variable
-   timeData            = ncread(frunoff,'time');
-   timeSchema          = ncinfo(frunoff,'time');
-   timeSchema.Format   = copySchema.Format;
-
-   ncwriteschema(fsave,timeSchema);
-   ncwrite(fsave,'time',timeData);
-
-   % now add the runoff data, using the 'xc' variable as a template
-   newSchema                           = ncinfo(fdomain,'xc');
-   newSchema.Size                      = [nCells,1,nDays];
-   newSchema.Dimensions(3).Name        = 'time';
-   newSchema.Dimensions(3).Length      = nDays;
-   newSchema.Dimensions(3).Unlimited   = false;
-   newSchema.Attributes(3)             = [];
-
-   % modify values that change for each variable, and write the new data
-   for n = 1:numel(newVars)
-
-      thisVar     = newVars{n};
-
-      % this works as long as I put the data in a var that existed in
-      % the frunoff file
-      if hasVars(n) == false
-         continue
-      end
-
-      % this copies the standard name and units
-      oldSchema                       = ncinfo(frunoff,thisVar);
-      newSchema.Name                  = thisVar;
-      newSchema.Attributes(1).Name    = oldSchema.Attributes(1).Name;
-      newSchema.Attributes(1).Value   = oldSchema.Attributes(1).Value;
-      newSchema.Attributes(2).Name    = oldSchema.Attributes(2).Name;
-      newSchema.Attributes(2).Value   = oldSchema.Attributes(2).Value;
-
-      % this is the easiest way to get the 2-d matlab var into ni,nj,time
-      Qtmp = nan(nCells,1,nDays);
-      for m = 1:365
-         Qtmp(:,1,m) = newData.(thisVar)(:,m);
-      end
-
-      if opts.save_file
-         ncwriteschema(fsave,newSchema);
-         ncwrite(fsave,thisVar,Qtmp);
-      end
-   end
-
-   % read in the new file to compare with the old file
-   schema  = newSchema;
-   info    = ncinfo(fsave);
-   data    = ncreaddata(fsave);
-else
-   schema  = [];
-   info    = 'file not written, see newschema';
-   data    = [];
 end
-
-
-
-
-
 
 %         % QDRAI
 %             if hasQDRAI
@@ -643,7 +633,7 @@ end
 %
 %
 % %% 1. Load the hillsloper data and modify it for MOSART
-% 
+%
 % load([path.sag 'sag_hillslopes']);
 %
 % % assign values to each variable
@@ -716,4 +706,3 @@ end
 %
 % % read in the new file to compare with the old file
 % newinfo.domain  = ncinfo(fsave);
-

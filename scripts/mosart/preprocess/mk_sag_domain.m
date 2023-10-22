@@ -77,7 +77,7 @@ mosartslopes = addstructfields(mosartslopes,A,'newfieldnames','area');
 
 % back up the existing file
 if isfile(fname_save)
-   fname_bk = backupfilename(fname_save);
+   fname_bk = backupfile(fname_save);
    copyfile(fname_save,fname_bk);
 end
 

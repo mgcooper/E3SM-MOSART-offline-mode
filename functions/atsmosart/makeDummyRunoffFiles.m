@@ -1,78 +1,81 @@
+function Info = makeDummyRunoffFiles( ...
+                  site_name, ...
+                  first_year, ...
+                  final_year, ...
+                  path_runoff_files, ...
+                  save_files, ...
+                  varargin)
+   %MAKEDUMMYRUNOFFFILE
+   % 
+   % this makes dummy runoff files for the year before and after the first and
+   % last year to deal with the weird mosart thing where it doesn't run the last
+   % year
 
-function Info = makeDummyRunoffFiles(site_name, ...
-                first_year, ...
-                final_year, ...
-                path_runoff_files, ...
-                save_files, ...
-                varargin)
+   opts = optionParser('nobackups',varargin(:));
+   copy_backups = opts.nobackups == false;
 
-% this makes dummy runoff files for the year before and after the first and last
-% year to deal with the weird mosart thing where it doesn't run the last year
+   % process the inputs
+   fname_prfx = ['runoff_' site_name];
 
-opts = optionParser('nobackups',varargin(:));
-copy_backups = opts.nobackups == false;
+   start_year = first_year-1;
+   extra_year = final_year+1;
 
-% process the inputs
-fname_prfx = ['runoff_' site_name];
+   % build file names to copy the first-year file to one before
+   fname_first_year = [fname_prfx '_' num2str(first_year) '.nc'];
+   fname_start_year = [fname_prfx '_' num2str(start_year) '.nc'];
 
-start_year = first_year-1;
-extra_year = final_year+1;
+   % build file names to copy the final-year file to one after
+   fname_final_year = [fname_prfx '_' num2str(final_year) '.nc'];
+   fname_extra_year = [fname_prfx '_' num2str(extra_year) '.nc'];
 
-% build file names to copy the first-year file to one before
-fname_first_year = [fname_prfx '_' num2str(first_year) '.nc'];
-fname_start_year = [fname_prfx '_' num2str(start_year) '.nc'];
+   % append the full path
+   fname_first_year = fullfile(path_runoff_files,fname_first_year);
+   fname_start_year = fullfile(path_runoff_files,fname_start_year);
+   fname_final_year = fullfile(path_runoff_files,fname_final_year);
+   fname_extra_year = fullfile(path_runoff_files,fname_extra_year);
 
-% build file names to copy the final-year file to one after
-fname_final_year = [fname_prfx '_' num2str(final_year) '.nc'];
-fname_extra_year = [fname_prfx '_' num2str(extra_year) '.nc'];
+   % read the schema for the start-year and final-year files that will be copied
+   copy_schema_start_year = ncinfo(fname_first_year);
+   copy_schema_extra_year = ncinfo(fname_final_year);
 
-% append the full path
-fname_first_year = fullfile(path_runoff_files,fname_first_year);
-fname_start_year = fullfile(path_runoff_files,fname_start_year);
-fname_final_year = fullfile(path_runoff_files,fname_final_year);
-fname_extra_year = fullfile(path_runoff_files,fname_extra_year);
+   % edit the time schema for the dummy start-year and extra-year files
+   time_schema_start_year = ['days since ' num2str(start_year) '-01-01 00:00:00'];
+   time_schema_extra_year = ['days since ' num2str(extra_year) '-01-01 00:00:00'];
 
-% read the schema for the start-year and final-year files that will be copied
-copy_schema_start_year = ncinfo(fname_first_year);
-copy_schema_extra_year = ncinfo(fname_final_year);
+   % put the edited values in the schema
+   copy_schema_start_year.Variables(3).Attributes(3).Value = time_schema_start_year;
+   copy_schema_extra_year.Variables(3).Attributes(3).Value = time_schema_extra_year;
 
-% edit the time schema for the dummy start-year and extra-year files
-time_schema_start_year = ['days since ' num2str(start_year) '-01-01 00:00:00'];
-time_schema_extra_year = ['days since ' num2str(extra_year) '-01-01 00:00:00'];
+   % DO THE COPY
+   if save_files == true
 
-% put the edited values in the schema
-copy_schema_start_year.Variables(3).Attributes(3).Value = time_schema_start_year;
-copy_schema_extra_year.Variables(3).Attributes(3).Value = time_schema_extra_year;
+      % back up the duplicates if they exist, unless told not to
+      if copy_backups == true
+         if isfile(fname_start_year)
+            fname_start_year_backup = backupfile(fname_start_year);
+            copyfile(fname_start_year,fname_start_year_backup);
+         end
 
-% DO THE COPY
-if save_files == true
-
-   % back up the duplicates if they exist, unless told not to
-   if copy_backups == true
-      if isfile(fname_start_year)
-         fname_start_year_backup = backupfilename(fname_start_year);
-         copyfile(fname_start_year,fname_start_year_backup);
+         if isfile(fname_extra_year)
+            fname_extra_year_backup = backupfile(fname_extra_year);
+            copyfile(fname_extra_year,fname_extra_year_backup);
+         end
       end
-      
-      if isfile(fname_extra_year)
-         fname_extra_year_backup = backupfilename(fname_extra_year);
-         copyfile(fname_extra_year,fname_extra_year_backup);
-      end
+
+      % copy the first/final files to the start/extra files
+      copyfile(fname_first_year,fname_start_year);
+      copyfile(fname_final_year,fname_extra_year);
+
+      % write the schema - note that the filename will auto-update
+      ncwriteschema(fname_start_year,copy_schema_start_year);
+      ncwriteschema(fname_extra_year,copy_schema_extra_year);
+
    end
-   
-   % copy the first/final files to the start/extra files
-   copyfile(fname_first_year,fname_start_year);
-   copyfile(fname_final_year,fname_extra_year);
-   
-   % write the schema - note that the filename will auto-update
-   ncwriteschema(fname_start_year,copy_schema_start_year);
-   ncwriteschema(fname_extra_year,copy_schema_extra_year);
 
+   % re-read the new schema and send it back
+   Info.new_schema_start_year = ncinfo(fname_start_year);
+   Info.new_schema_extra_year = ncinfo(fname_extra_year);
 end
-
-% re-read the new schema and send it back
-Info.new_schema_start_year = ncinfo(fname_start_year);
-Info.new_schema_extra_year = ncinfo(fname_extra_year);
 
 % % write the data - only needed to write a new file, instead of the copy/paste
 % copy_data = ncreaddata(fname_first_year);
@@ -101,7 +104,7 @@ Info.new_schema_extra_year = ncinfo(fname_extra_year);
 % ncwrite(['runoff_trib_basin_' num2str(n) '.nc'],'time',dat);
 
 
-% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
+% % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %
 % og methods below here
 
 % copyFile    = 'runoff_trib_basin_2002.nc';
@@ -109,9 +112,9 @@ Info.new_schema_extra_year = ncinfo(fname_extra_year);
 % copy_data   = ncreaddata(copyFile);
 % copy_schema = ncinfo(copyFile);
 % copy_schema.Variables(3).Attributes(3).Value = 'days since 2003-01-01 00:00:00';
-% 
+%
 % ncwriteschema(pasteFile,copy_schema);
-% 
+%
 % % this is only needed if the system copy/paste ahsn't already been done
 % ncwrite(pasteFile,'xc',copy_data.xc);
 % ncwrite(pasteFile,'yc',copy_data.yc);
@@ -125,9 +128,9 @@ Info.new_schema_extra_year = ncinfo(fname_extra_year);
 % copy_data   = ncreaddata(copyFile);
 % copy_schema = ncinfo(copyFile);
 % copy_schema.Variables(3).Attributes(3).Value = 'days since 1997-01-01 00:00:00';
-% 
+%
 % ncwriteschema(pasteFile,copy_schema);
-% 
+%
 % info = ncinfo(pasteFile);
 
 % dat = ncread(['runoff_trib_basin_' num2str(n) '.nc'],'time' );
@@ -141,17 +144,17 @@ Info.new_schema_extra_year = ncinfo(fname_extra_year);
 % % the 'time' variable is just 0:364, this loop just adds 1 to each day and
 % % rewrites the time variable only
 % for n = 1997:2003
-%     
+%
 %    sch = ncinfo(['runoff_trib_basin_' num2str(n) '.nc'] );
 %    dat = ncread(['runoff_trib_basin_' num2str(n) '.nc'],'time' );
 %    dat = dat+1;
-%    
+%
 %    ncwrite(['runoff_trib_basin_' num2str(n) '.nc'],'time',dat);
 % end
 
 % test = ncreaddata('runoff_trib_basin_2002.nc');
 % info = ncinfo('runoff_trib_basin_2002.nc');
-% 
+%
 % min(test.QDRAI(:))
 % max(test.QDRAI(:))
 % sum(isnan(test.QDRAI(:)))

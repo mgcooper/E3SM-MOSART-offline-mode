@@ -24,8 +24,8 @@ function newlinks = removelink(newlinks,rm_link,us_link,ds_link,rp_link,slope_fl
 % Note: previously mos_removelink
 
 % get the indices of the link to be removed and its replacement
-idxrm = ismember([newlinks.link_ID],rm_link);
-idxrp = ismember([newlinks.link_ID],rp_link);
+idxrm = ismember([newlinks.link_ID], rm_link);
+idxrp = ismember([newlinks.link_ID], rp_link);
 
 % get the us_link's and ds_link. although this works, to be careful, i
 % am keeping us_link and ds_link as inputs
