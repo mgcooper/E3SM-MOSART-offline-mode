@@ -1,4 +1,4 @@
-function [links,inletID,outletID] = findDownstreamLinks(links,nodes)
+function [links, inletID, outletID] = findDownstreamLinks(links, nodes)
    %FINDDOWNSTREAMLINKS add ID->dnID connectivity and inlet/outlet info to links
    %
    % links = findDownstreamLinks(links,nodes) uses LINKS and NODES geostructs

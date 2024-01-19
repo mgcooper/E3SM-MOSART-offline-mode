@@ -41,7 +41,7 @@ function [schema,info,data] = mos_makemosart(slopes,ftemplate,fsave,opts)
    nVars  = length(outVars);
 
    % the template file has 72 grid cells, need to replace with ncells
-   iReplace = find(ismember(varInfo.Name,'latixy'));
+   iReplace = find(ismember(varInfo.Name, 'latixy'));
    sizeReplace = cell2mat(varInfo.Size(iReplace));
 
    % the template file

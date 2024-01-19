@@ -4,19 +4,23 @@ clean
 
 %% set the options
 
-savefile = false;
-sitename = 'trib_basin';
-atsrunID = 'huc0802_gauge15906000_frozen_a8';
+savefile = true;
+sitename = 'sag_basin';
+atsrunID = 'sag_basin';
 fname_domain_data = 'mosart_hillslopes.mat';
-fname_runoff_data = 'frozen_huc190604020802_gauge15906000_discharge_2D_a8.xlsx';
-fname_hsarea_data = 'huc190604020802_gauge15906000_subcatch_area.xlsx';
+fname_runoff_data = 'sag_hillslope_discharge.mat';
+fname_hsarea_data = '';
+
+% atsrunID = 'huc0802_gauge15906000_frozen_a8';
+% fname_runoff_data = 'frozen_huc190604020802_gauge15906000_discharge_2D_a8.xlsx';
+% fname_hsarea_data = 'huc190604020802_gauge15906000_subcatch_area.xlsx';
 
 opts = const( ...
-   'savefile',savefile, ...
-   'sitename',sitename, ...
-   'startyear',1998, ...
-   'endyear',2002, ...
-   'runID',atsrunID);
+   'savefile', savefile, ...
+   'sitename', sitename, ...
+   'startyear', 2014, ...
+   'endyear', 2018, ...
+   'runID', atsrunID);
 
 %% build paths
 
@@ -88,8 +92,8 @@ fname_domain_data = ...
 
 cd(path_runoff_files);
 
-CopyInfo = makeDummyRunoffFiles(sitename,opts.startyear,opts.endyear, ...
-   path_runoff_files,opts.savefile,'nobackups');
+CopyInfo = makeDummyRunoffFiles(sitename, opts.startyear, opts.endyear, ...
+   path_runoff_files, opts.savefile, 'nobackups');
 
 % info = ncinfo(pasteFile);
 % dat = ncread(['runoff_trib_basin_' num2str(n) '.nc'],'time' );
@@ -119,18 +123,18 @@ subplot(1,2,1);
 plot(timeATS,roffATS); hold on;
 plot(timeMP,roffMP);
 legend('ATS','Ming Pan');
-ylabel('daily runoff [m$^3$ s$^{-1}$]');
+ylabel('daily runoff [m^3 s^{-1}]');
 
 subplot(1,2,2);
 plot(timeATS,cumsum(roffATS.*(3600*24/1e9))); hold on;
 plot(timeATS,cumsum(roffMP.*(3600*24/1e9)));
 l = legend('ATS','Ming Pan');
-ylabel('cumulative runoff [km$^3$]');
-figformat('linelinewidth',1.5)
+ylabel('cumulative runoff [km^3]');
+% figformat('linelinewidth',1.5)
 
 
 % FROM HERE, WE NEED TO:
-% 1. DONE use reyear_ats to make the 1997/2003 files and fix the schema
+% 1. DONE use makeDummyRunoffFiles to make the 1997/2003 files and fix the schema
 % 2. copy the runoff files and if updated the MOSART file to compy:
 % qfs/people/coop558/data/e3sm/forcing/ats/<ats_runID>
 % 3. copy the user_dlnd.streams.txt.lnd.gpcc.ats.<site_name> to local and edit

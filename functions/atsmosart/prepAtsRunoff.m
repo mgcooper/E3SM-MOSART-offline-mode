@@ -13,8 +13,8 @@ function [roff,time,area] = prepAtsRunoff(fname_area_data,fname_runoff_data,hs_i
    % ---------------
 
    % read the runoff and area data, merge slopes, and reorder by hs_id
-   Data = readAtsRunoffTable(fname_runoff_data,hs_id,'mergeslopes');    % m3/d
-   area = transpose(combineHillslopeArea(fname_area_data,hs_id));       % m2
+   Data = readAtsRunoffTable(fname_runoff_data, hs_id, 'mergeslopes');  % m3/d
+   area = transpose(combineHillslopeArea(fname_area_data, hs_id));      % m2
    roff = table2array(Data);
    roff = roff./area;                     % m3/d -> m/d
    roff = roff.*1000./(24*3600);          % m/d -> mm/s

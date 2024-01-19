@@ -1,17 +1,19 @@
 function Info = makeDummyRunoffFiles( ...
-                  site_name, ...
-                  first_year, ...
-                  final_year, ...
-                  path_runoff_files, ...
-                  save_files, ...
-                  varargin)
+      site_name, ...
+      first_year, ...
+      final_year, ...
+      path_runoff_files, ...
+      save_files, ...
+      varargin)
    %MAKEDUMMYRUNOFFFILE
-   % 
+   %
    % this makes dummy runoff files for the year before and after the first and
    % last year to deal with the weird mosart thing where it doesn't run the last
    % year
 
-   opts = optionParser('nobackups',varargin(:));
+   withwarnoff('MATLAB:imagesci:netcdf:varExists')
+
+   opts = optionParser('nobackups', varargin(:));
    copy_backups = opts.nobackups == false;
 
    % process the inputs
@@ -29,10 +31,10 @@ function Info = makeDummyRunoffFiles( ...
    fname_extra_year = [fname_prfx '_' num2str(extra_year) '.nc'];
 
    % append the full path
-   fname_first_year = fullfile(path_runoff_files,fname_first_year);
-   fname_start_year = fullfile(path_runoff_files,fname_start_year);
-   fname_final_year = fullfile(path_runoff_files,fname_final_year);
-   fname_extra_year = fullfile(path_runoff_files,fname_extra_year);
+   fname_first_year = fullfile(path_runoff_files, fname_first_year);
+   fname_start_year = fullfile(path_runoff_files, fname_start_year);
+   fname_final_year = fullfile(path_runoff_files, fname_final_year);
+   fname_extra_year = fullfile(path_runoff_files, fname_extra_year);
 
    % read the schema for the start-year and final-year files that will be copied
    copy_schema_start_year = ncinfo(fname_first_year);
@@ -63,12 +65,12 @@ function Info = makeDummyRunoffFiles( ...
       end
 
       % copy the first/final files to the start/extra files
-      copyfile(fname_first_year,fname_start_year);
-      copyfile(fname_final_year,fname_extra_year);
+      copyfile(fname_first_year, fname_start_year);
+      copyfile(fname_final_year, fname_extra_year);
 
       % write the schema - note that the filename will auto-update
-      ncwriteschema(fname_start_year,copy_schema_start_year);
-      ncwriteschema(fname_extra_year,copy_schema_extra_year);
+      ncwriteschema(fname_start_year, copy_schema_start_year);
+      ncwriteschema(fname_extra_year, copy_schema_extra_year);
 
    end
 

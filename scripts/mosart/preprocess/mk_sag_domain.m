@@ -2,13 +2,26 @@ clean
 
 %% set the options
 
+% runID = 'huc0802_gauge15906000_nopf';
+% areafile = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
+% opts = const( ...
+%    'save_file', true,...
+%    'sitename', 'trib_basin',...
+%    'runID', runID,...
+%    'farea', areafile,...
+%    'ftemplate', 'domain_u_icom_half_sparse_grid_c200610.nc',...
+%    'testplot', true);
+
+runID = 'sag_basin';
+areafile = '';
 opts = const( ...
-   'save_file',true,...
-   'sitename','trib_basin',...
-   'runID','huc0802_gauge15906000_nopf',...
-   'farea','huc0802_gauge15906000_nopf_subcatch_area.csv',...
-   'ftemplate','domain_u_icom_half_sparse_grid_c200610.nc',...
-   'testplot',true);
+   'save_file', true, ...
+   'sitename', 'sag_basin', ...
+   'runID', runID, ...
+   'custom_area', false, ... % if true, supply farea
+   'farea', areafile, ...
+   'ftemplate', 'domain_u_icom_half_sparse_grid_c200610.nc',...
+   'testplot', true);
 
 sitename = opts.sitename;
 
@@ -34,7 +47,7 @@ path_domain_data = ...
 path_domain_file_template = ...
    getenv('USER_MOSART_TEMPLATE_PATH');
 
-path_mosart_file_save = ...
+path_domain_file_save = ...
    getenv('USER_E3SM_CONFIG_PATH');
 
 path_area_file = ...
@@ -45,33 +58,42 @@ path_area_file = ...
 % fdomain is used as a template to get the right .nc file format
 fname_domain = ...
    fullfile(...
-   path_domain_file_template,opts.ftemplate);
+   path_domain_file_template, opts.ftemplate);
 
 % farea is an optional file 
 fname_area_file = ...
    fullfile( ...
-   path_area_file,opts.runID,opts.farea);
+   path_area_file, opts.runID, opts.farea);
 
 % fsave is the domain file created by this script
 fname_save = ...
    fullfile( ...
-   path_mosart_file_save,['domain_' sitename '.nc']);
+   path_domain_file_save, ['domain_' sitename '.nc']);
 
 %% load the hillsloper data that has ID and dnID and prep it for MOSART
 
-load(fullfile(path_domain_data,'mosart_hillslopes.mat'),'mosartslopes');
+load(fullfile(path_domain_data, 'mosart_hillslopes.mat'), 'mosartslopes');
+
+
+% plot 
+figure
+histogram([mosartslopes.rwid])
+ylabel('count')
+xlabel('bankfull width [m]')
 
 %% put the updated ats area into the mosart fields
 
-% the ats hillslopes are ordered by hillsloper hs_id, but mosartslopes are
-% ordered by 1:numel(links). the links.hs_id field maps between them.
-A = combineHillslopeArea(fname_area_file,transpose([mosartslopes.hs_id]));
-
-% replace the mosartslopes area field with the updated one
-mosartslopes = addstructfields(mosartslopes,A,'newfieldnames','area');
-
-% this shows the ordering is correct
-% figure; scatterfit(A, [mosartslopes.area]) 
+if opts.custom_area
+   % the ats hillslopes are ordered by hillsloper hs_id, but mosartslopes are
+   % ordered by 1:numel(links). the links.hs_id field maps between them.
+   A = combineHillslopeArea(fname_area_file,transpose([mosartslopes.hs_id]));
+   
+   % replace the mosartslopes area field with the updated one
+   mosartslopes = addstructfields(mosartslopes,A,'newfieldnames','area');
+   
+   % this shows the ordering is correct
+   % figure; scatterfit(A, [mosartslopes.area]) 
+end
 
 %% write the file
 
@@ -81,34 +103,34 @@ if isfile(fname_save)
    copyfile(fname_save,fname_bk);
 end
 
-[schema,info,data] = ...
-   mosartMakeDomainFile(mosartslopes,fname_domain,fname_save,opts);
+[schema, info, data] = ...
+   mosartMakeDomainFile(mosartslopes, fname_domain, fname_save, opts);
 
 % go to the ouput folder 
-cd(path_mosart_file_save)
+cd(path_domain_file_save)
 
 % not sure what this was, maybe plot the boxes around each node 
 if opts.testplot
    macfig
    for n = 1:numel(data.xc)
-      if isfield(data,'xv')
-         geobox(data.yv(:,n),data.xv(:,n));
+      if isfield(data, 'xv')
+         geobox(data.yv(:,n), data.xv(:,n));
       end
-      myscatter(data.xc(n),data.yc(n),80); hold on;
+      myscatter(data.xc(n), data.yc(n), 80); hold on;
       pause
    end
 end
 
 
-% compare with the one produced by mk_huc_domain 
-ftest = '/Users/coop558/work/data/e3sm/config/domain_trib_test.nc';
-fcomp = compareMosartFiles(fname_save,ftest);
-
-% says xc not equal
-d1 = ncreaddata(fname_save);
-d2 = ncreaddata(ftest);
-
-isequal(d1.xc,wrapTo360(d2.xc))
-figure; scatterfit(d1.xc,wrapTo360(d2.xc))
+% % compare with the one produced by mk_huc_domain 
+% ftest = '/Users/coop558/work/data/e3sm/config/domain_trib_test.nc';
+% fcomp = compareMosartFiles(fname_save,ftest);
+% 
+% % says xc not equal
+% d1 = ncreaddata(fname_save);
+% d2 = ncreaddata(ftest);
+% 
+% isequal(d1.xc,wrapTo360(d2.xc))
+% figure; scatterfit(d1.xc,wrapTo360(d2.xc))
 
 

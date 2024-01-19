@@ -8,8 +8,10 @@ function [newinfo,roff,roffMP] = makeAtsRunoff( ...
                                  varargin)
    %MAKEATSRUNOFF
 
+   withwarnoff('MATLAB:imagesci:netcdf:varExists')
+
    % PARSE INPUTS
-   opts = optionParser('make_backups',varargin(:));
+   opts = optionParser('make_backups', varargin(:));
 
    % set the filename for the custom area data
    if nargin > 6
@@ -18,8 +20,8 @@ function [newinfo,roff,roffMP] = makeAtsRunoff( ...
 
    %% load the hillsloper domain data
 
-   load(fname_domain_data,'links');
-   hs_id = [links.hs_id];
+   load(fname_domain_data, 'links');
+   hs_id = [links.hs_ID];
 
    % plot the hillsloper data if needed for debugging
    % plothillsloper(mosartslopes,links)
@@ -33,65 +35,78 @@ function [newinfo,roff,roffMP] = makeAtsRunoff( ...
    %% convert the ats data to a netcdf
 
    % read in the ats runoff spreadsheet
-   [roff,time,area] = prepAtsRunoff(fname_area_data,fname_runoff_data,hs_id);
+   if strcmp('trib_basin', site_name)
+      [roff, time, area] = prepAtsRunoff( ...
+         fname_area_data, fname_runoff_data, hs_id);
+   elseif strcmp('sag_basin', site_name)
+      load(fname_runoff_data, 'Data')
+      roff = Data{:, :};
+      time = Data.Time;
+      area = Data.Properties.CustomProperties.Area;
+      roff = roff ./ area;                   % m3/d -> m/d
+      roff = roff * 1000 ./ (24 * 3600);     % m/d -> mm/s
+      roff = reshape(roff, 365, [], size(roff, 2));
+   end
 
    runyears = unique(year(time));
-   [~,nyears,nslopes] = size(roff);
+   [~, nyears, nslopes] = size(roff);
 
-   roffMP = nan(size(roff));    % initialize ats runoff
+   % initialize an array to store the mingpan runoff, which is returned for
+   % comparison with ats runoff
+   roffMP = nan(size(roff));
 
    for n = 1:nyears
 
       nyear = num2str(runyears(n));
       fname = ['runoff_' site_name '_' nyear '.nc'];
-      fcopy = fullfile(path_runoff_template,fname); % finfo = ncinfo(fcopy);
-      fsave = fullfile(path_runoff_files,fname);
+      fcopy = fullfile(path_runoff_template, fname); % finfo = ncinfo(fcopy);
+      fsave = fullfile(path_runoff_files, fname);
 
       % keep the ming pan runoff to compare with ATS
-      roffMP(:,n,:) = permute(ncread(fcopy,'QDRAI'),[3 2 1]);
+      roffMP(:, n, :) = permute(ncread(fcopy, 'QDRAI'), [3 2 1]);
 
       if isfile(fsave) && opts.make_backups == true
          fbackup = backupfile(fsave);
-         copyfile(fsave,fbackup);
+         copyfile(fsave, fbackup);
       else
          system(['cp ' fcopy ' ' fsave]);
       end
 
       % QDRAI
-      schem = ncinfo(fcopy,'QDRAI');
-      Qtemp = squeeze(roff(:,n,:));
-      QDRAI = nan(nslopes,1,365);
+      schem = ncinfo(fcopy, 'QDRAI');
+      Qtemp = squeeze(roff(:, n, :));
+      QDRAI = nan(nslopes, 1, 365);
       for m = 1:365
-         QDRAI(:,1,m) = Qtemp(m,:);
+         QDRAI(:, 1, m) = Qtemp(m, :);
       end
 
       if save_files
          % ncwriteschema isn't needed if the file exists, which it will with the
-         % system(cp) call above, unless i want to change the schema, which isn't
-         % done but there's no harm in keeping it
-         ncwriteschema(fsave,schem);
-         ncwrite(fsave,'QDRAI',QDRAI);
+         % system(cp) call above, unless i want to change the schema, which
+         % isn't done but there's no harm in keeping it
+         ncwriteschema(fsave, schem);
+         ncwrite(fsave, 'QDRAI', QDRAI);
       end
 
       % QOVER
-      schem = ncinfo(fcopy,'QOVER');
-      QOVER = 0.0.*QDRAI;
+      schem = ncinfo(fcopy, 'QOVER');
+      QOVER = 0 * QDRAI;
 
       if save_files
-         ncwriteschema(fsave,schem);
-         ncwrite(fsave,'QOVER',QOVER);
+         ncwriteschema(fsave, schem);
+         ncwrite(fsave, 'QOVER', QOVER);
       end
       newinfo = ncinfo(fsave);
    end
 
    % send back the ats and mingpan runoff as timetables of basin runoff in m3/s
-   roff = reshape(roff,365*nyears,nslopes);
-   roff = sum(roff.*area,2)/1000;
-   roff = array2timetable(roff,'RowTimes',time);
+   roff = reshape(roff, 365*nyears, nslopes);
+   roff = sum(roff .* area, 2) / 1000;
+   roff = array2timetable(roff, 'RowTimes', time);
 
-   roffMP = reshape(roffMP,365*nyears,nslopes);
-   roffMP = sum(roffMP.*area,2)/1000;
-   roffMP = array2timetable(roffMP,'RowTimes',time);
+   roffMP = reshape(roffMP, 365*nyears, nslopes);
+   roffMP = sum(roffMP.*area, 2) / 1000;
+   roffMP = array2timetable(roffMP, 'RowTimes', time);
 end
 
 % this is right before I switched to passing in the full path to files
