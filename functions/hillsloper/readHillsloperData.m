@@ -135,17 +135,41 @@ function [basins,slopes,links,nodes,boundary,ftopo] = readHillsloperData(sitenam
    
    % % decided to leave this for now, but
    % % remove unneccesary fields (copied from makenewslopes 15 March 2023)
-   % removeVars = {'link_id','outlet_idx','bp','endbasin'};
+   % removeVars = {'link_id', 'outlet_idx', 'bp', 'endbasin'};
    % for n = 1:numel(removeVars)
-   %    if isfield(newslopes,removeVars{n})
-   %       newslopes = rmfield(newslopes,removeVars{n});
+   %    if isfield(slopes, removeVars{n})
+   %       slopes = rmfield(slopes, removeVars{n});
    %    end
    % end
    
    % add Lat/Lon fields
-   links = updateCoordinates(links, 3338, "Authority", "EPSG");
-   nodes = updateCoordinates(nodes, 3338, "Authority", "EPSG");
-   slopes = updateCoordinates(slopes, 3338, "Authority", "EPSG");
-   basins = updateCoordinates(basins, 3338, "Authority", "EPSG");
-   boundary = updateCoordinates(boundary, 3338, "Authority", "EPSG");
+   try
+      links = updateCoordinates(links, 3338, "Authority", "EPSG");
+      nodes = updateCoordinates(nodes, 3338, "Authority", "EPSG");
+      slopes = updateCoordinates(slopes, 3338, "Authority", "EPSG");
+      basins = updateCoordinates(basins, 3338, "Authority", "EPSG");
+      boundary = updateCoordinates(boundary, 3338, "Authority", "EPSG");
+   catch
+      % likely mapping toolbox checkout error
+   end
+   
+   %% Add scalar x/y and lat/lon to links
+   
+   % This is useful for plotting link attributes, e.g. to compare with slopes
+   for m = 1:numel(links)
+      links(m).link_X = nanmean([links(m).X]);
+      links(m).link_Y = nanmean([links(m).Y]);
+      links(m).link_Lat = nanmean([links(m).Lat]);
+      links(m).link_Lon = nanmean([links(m).Lon]);
+      
+      slopes(m).slope_X = nanmean([slopes(m).X]);
+      slopes(m).slope_Y = nanmean([slopes(m).Y]);
+      slopes(m).slope_Lat = nanmean([slopes(m).Lat]);
+      slopes(m).slope_Lon = nanmean([slopes(m).Lon]);
+      
+      basins(m).basin_X = nanmean([basins(m).X]);
+      basins(m).basin_Y = nanmean([basins(m).Y]);
+      basins(m).basin_Lat = nanmean([basins(m).Lat]);
+      basins(m).basin_Lon = nanmean([basins(m).Lon]);
+   end
 end
