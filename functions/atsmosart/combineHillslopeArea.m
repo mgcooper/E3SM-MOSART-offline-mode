@@ -2,8 +2,8 @@ function A = combineHillslopeArea(fname_area_data,varargin)
 
    % read the area. the negative numbers are underscores in the runoff table
    A0 = readtable(fname_area_data);
-   A1 = sortrows(A0(A0.ID<0,:),'ID','descend');
-   A2 = sortrows(A0(A0.ID>0,:),'ID','ascend');
+   A1 = sortrows(A0(A0.ID < 0, :), 'ID', 'descend');
+   A2 = sortrows(A0(A0.ID > 0, :), 'ID', 'ascend');
    A  = A1.area_m2_ + A2.area_m2_;
 
    % hs_id is the hs_id field in the hillsloper links file, becuase the

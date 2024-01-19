@@ -6,19 +6,25 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
    % elevation (not provided)
    %
    % Update:
+   % It appears once the links and missing basin (427) are fixed in
+   % b_make_newslopes, the hs_ID field is associative between links, slopes, and
+   % basins, and I can get the +/- hillslope slope from slopes. THUS THIS CODE
+   % IS NOT NEEDED ANYMORE.
+   %
+   % Update:
    % The new 'basins' (merged slopes) are associative with links, and has the
    % area field as before, and links has the slope, but only the slopes struct
    % has the area, elevation, and hillslope slope, so whether or not I use this
    % function to read in the external topo data and compute those values, I need
    % to process the merged slopes somehow, but I should be able to compute
-   % weighted averages based on surface area. 
+   % weighted averages based on surface area.
    %
    % area: basins (3250)
    % slope: links (3250) (but is this the right slope?)
-   % elevation: slopes - but the values are 
+   % elevation: slopes - but the values are
 
    % warning('off') % so polyshape stops complaining
-   
+
    % Try to activate topotoolbox
    success = true;
    try
@@ -28,7 +34,7 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
          success = false;
       end
    end
-   
+
    % Use topo toolbox to read the elevation data
    try
       DEM = GRIDobj(fnametopo); % elevation
@@ -39,7 +45,7 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
       end
    end
 
-   % Try to read the data using mapping toolbox 
+   % Try to read the data using mapping toolbox
    try
       finfo = geotiffinfo(fnametopo);
       DEM.georef.SpatialRef.ProjectedCRS = finfo.CoordinateReferenceSystem;
@@ -63,7 +69,7 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
    [X, Y] = meshgrid(X,Y);
    % I think the X, Y above were used in the inpolygon method commented out at
    % the end
-   
+
 
    % for reference, from the sag_basin version:
    % load([pathtopo 'sag_dems'],'R','Z'); % 5 m dem, for plotting
@@ -95,13 +101,13 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
       % Construct a grid of points to interpolate the hillslope
       box = hs.BoundingBox;
       Rhs = bbox2R(box, res*5);
-      
+
       [xhs, yhs] = R2grid(Rhs);
-      
+
       xhs = reshape(xhs, size(xhs, 1) * size(xhs, 2), 1);
       yhs = reshape(yhs, size(yhs, 1) * size(yhs, 2), 1);
       ihs = inpolygon(xhs, yhs, x, y);
-      
+
       if isgeo
          hslp = round(mean( ...
             geointerp(GRD.Z, R, yhs(ihs), xhs(ihs), 'linear'), 'omitnan'), 4);
@@ -122,24 +128,24 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
       % try topotoolbox interp
 
       if isnan(hele) || isnan(hslp) % set the resolution back to 5
-         
+
          Rhs = bbox2R(box, res);
-         
+
          [xhs,yhs] = R2grid(Rhs);
-         
+
          xhs = reshape(xhs, size(xhs, 1) * size(xhs, 2), 1);
          yhs = reshape(yhs, size(yhs, 1) * size(yhs, 2), 1);
          ihs = inpolygon(xhs, yhs, x, y);
-         
+
          hele = round(mean( ...
             mapinterp(DEM.Z, R, xhs(ihs), yhs(ihs), 'linear'), 'omitnan'), 0);
-         
+
          hslp = round(mean( ...
             mapinterp(GRD.Z, R,xhs(ihs), yhs(ihs), 'linear'), 'omitnan'), 4);
-         
+
          harea = round(area(hspoly),0);
       end
-      
+
       % This builds a bounding box around the hillslope, then creates a grid of
       % points at res*5 x-y spacing, then takes the points within the hillslope
       % boundary, and queries the dem at those points.
@@ -149,7 +155,7 @@ function slopes = computeHillslopeTopo(slopes, fnametopo)
       slopes(n).hslp = hslp;
       slopes(n).helev = hele;
    end
-   
+
    % Below here is the part that added Lat Lon fields and checked for inserted
    % 90o Lats which i think is b/c of Nan separators
 end

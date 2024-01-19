@@ -27,12 +27,12 @@ function plothillsloper(slopes,links,varargin)
    opts.slopes = '';
    opts.nodes = '';
    opts = parse_pv_pairs(opts, parser.Results.labelfields);
-   
+
    nodes = parser.Results.nodes;
    pauseflag = parser.Results.pauseflag;
    labelflag = parser.Results.labelflag;
    labelfields = parser.Results.labelfields;
-   
+
    plotnodes = false;
    if ~isempty(nodes)
       plotnodes = true;
@@ -55,7 +55,7 @@ function plothillsloper(slopes,links,varargin)
    % need to determine if both slopes and nodes have planar and/or geo coords
 
    %% Create the figure
-   
+
    figure; hold on;
 
    for n = 1:numel(slopes)
@@ -171,7 +171,8 @@ function plothillsloper(slopes,links,varargin)
             x = lonn;
             y = latn;
          end
-         scatter(x,y,125,'k','filled');
+
+         scatter(x, y, 125, 'k', 'filled');
 
          if labelflag && ~isempty(opts.nodes)
             xlab = mean(lonn,'omitnan');
@@ -191,31 +192,31 @@ function plothillsloper(slopes,links,varargin)
 end
 
 function plotInlets(slopes, links, nodes)
-   
+
    geoshow(nodes(inletID),'SymbolSpec',specs.nodes); hold on;
    geoshow(links,'SymbolSpec',specs.links);
    geoshow(nodes(~inletID),'SymbolSpec',specs.outletnode);
    geoshow(nodes(outletID),'SymbolSpec',specs.outletnode); % WRONG
    geoshow(newlinks(outletID),'SymbolSpec',specs.newlinks); % WRONG (but close)
    geoshow(newslopes(outletID),'SymbolSpec',specs.slopes); % WRONG (but close)
-   
+
 end
 
 function plotOutlet(slopes, links, nodes)
-   
+
    outletNode = nodes(outletID);
    outletLink = links(outletID);
-   
+
    hold on;
    plot(outletNode.X, outletNode.Y, 'o', 'MarkerEdgeColor', 'none', ...
       'MarkerSize', 20, 'MarkerFaceColor', 'r')
-   
+
    plot(outletLink.X, outletLink.Y, '-', 'Color', 'r')
-   
-   
-   
+
+
+
    [x, y] = ll2utm(outletNode.Lat, outletNode.Lon);
-   
+
    geoshow(nodes(inletID),'SymbolSpec',specs.nodes); hold on;
    geoshow(links,'SymbolSpec',specs.links);
    geoshow(nodes(~inletID),'SymbolSpec',specs.outletnode);
