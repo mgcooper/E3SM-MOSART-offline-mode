@@ -1,4 +1,5 @@
-function [schema,info,data] = mosartMakeDomainFile(slopes,ftemplate,fsave,opts)
+function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, ...
+      fsave, opts)
    % MOSARTMAKEDOMAINFILE build domain file for MOSART
    %
    %  Inputs

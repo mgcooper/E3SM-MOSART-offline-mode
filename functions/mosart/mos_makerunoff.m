@@ -1,4 +1,5 @@
-function [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
+function [schema, info, data] = mos_makerunoff(slopes, frunoff, fdomain, ...
+      fsave, opts)
    %MOS_MAKERUNOFF
    %
    %  [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
@@ -136,7 +137,7 @@ function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
    newData.QOVER   = zeros(size(newR));
 
    % WRITE THE NEW FILE
-   if opts.save_file
+   if opts.savefile
 
       % delete the file if it exists, otherwise there will be errors
       if isfile(fsave); delete(fsave); end
@@ -191,7 +192,7 @@ function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
       % modify values that change for each variable, and write the new data
       for n = 1:numel(newVars)
 
-         thisVar     = newVars{n};
+         thisVar = newVars{n};
 
          % this works as long as I put the data in a var that existed in
          % the frunoff file
@@ -213,7 +214,7 @@ function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
             Qtmp(:,1,m) = newData.(thisVar)(:,m);
          end
 
-         if opts.save_file
+         if opts.savefile
             ncwriteschema(fsave,newSchema);
             ncwrite(fsave,thisVar,Qtmp);
          end
@@ -260,7 +261,7 @@ function [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
    newData.QOVER   = zeros(size(newR));
 
    % WRITE THE NEW FILE
-   if opts.save_file
+   if opts.savefile
 
       % delete the file if it exists, otherwise there will be errors
       if exist(fsave,'file'); delete(fsave); end
@@ -326,7 +327,7 @@ function [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
             Qtmp(:,1,m) = newData.(thisVar)(:,m);
          end
 
-         if opts.save_file
+         if opts.savefile
             ncwriteschema(fsave,newSchema);
             ncwrite(fsave,thisVar,Qtmp);
          end
