@@ -10,8 +10,8 @@ function mapslopes(slopes, links, nodes, boundary, option)
    % for now keep these false
    labelnodes = false;
    labellinks = false;
-   
-   % As long as slopes, nodes, and links were loaded using readHillsloperData,
+
+   % As long as slopes, nodes, and links were loaded using hillsloper.readfiles,
    % they should have Lat/Lon fields and X/Y
    try
       [latSlopes, lonSlopes] = latlonFromGeoStruct(slopes);
@@ -23,7 +23,7 @@ function mapslopes(slopes, links, nodes, boundary, option)
    latlims = [min(latNodes) max(latNodes)]; % + [-0.001 0.001];
    lonlims = [min(lonNodes) max(lonNodes)]; % + [-0.001 0.001];
 
-   specs = createSymbolSpecs();
+   specs = hillsloper.createSymbolSpecs();
 
    % plot using mapshow
    if strcmp(option, 'mapshow')
@@ -38,7 +38,7 @@ function mapslopes(slopes, links, nodes, boundary, option)
       % plot using worldmap with plotm
       figure
       geomap(latSlopes, lonSlopes)
-      
+
       plotm(latSlopes, lonSlopes, 'g'); hold on;
       plotm(latNodes, lonNodes, 'ro'); formatPlotMarkers;
       plotm(latLinks, lonLinks, 'b');
@@ -58,7 +58,7 @@ function mapslopes(slopes, links, nodes, boundary, option)
    if labelnodes
 
       % jitter for the labels
-      jitterx = (lonlims(2)-lonlims(1))/80; %#ok<*UNRCH> 
+      jitterx = (lonlims(2)-lonlims(1))/80; %#ok<*UNRCH>
       jittery = (latlims(2)-latlims(1))/80;
 
       x = lonNodes + jitterx / 2;
@@ -72,22 +72,22 @@ function mapslopes(slopes, links, nodes, boundary, option)
    end
 
    if labellinks
-      
-      % This plots the link ids on the slopes, but is too slow for full Sag 
+
+      % This plots the link ids on the slopes, but is too slow for full Sag
 
       x = lonSlopes;
       y = latSlopes;
-         
+
       for n = 1:length(slopes)
-         
+
          % plot(slopes(n).Lon,slopes(n).Lat,'Color','g'); hold on;
-         
+
          jitterx = rand*(max(x)-min(x));
          jittery = rand*(max(y)-min(y));
-         
+
          nx = nanmean(x)-(rand*jitterx/2);
          ny = nanmean(y)-(rand*jittery/2);
-         
+
          nid = num2str(slopes(n).link_ID);
          text(nx, ny, nid, 'Color', 'r', 'FontSize', 12);
       end
@@ -101,9 +101,9 @@ function plotm_hillsloper(slopes, links, nodes)
    % b_make_newslopes. The reason it is so slow is the polyshape creation.
    % Not sure if the loop over the struct is faster than calling
    % latlonFromGeostruct like I do in the main function above.
-   
+
    % this is extremely slow with the entire sag basin
-   
+
    % jitter for the labels
    latlims = [min([nodes.Lat]) max([nodes.Lat])];
    lonlims = [min([nodes.Lon]) max([nodes.Lon])];

@@ -11,9 +11,9 @@ function basins = fixda(basins, links, nodes)
       end
 
       hs_ID = basins(n).hs_ID;
-      this_basin = getslope(basins, hs_ID);
-      this_link = getlink(links, hs_ID, 'hs_ID');
-      this_node = getnode(nodes, this_link.ds_node_ID, 'node_ID');
+      this_basin = hillsloper.getslope(basins, hs_ID);
+      this_link = hillsloper.getlink(links, hs_ID, 'hs_ID');
+      this_node = hillsloper.getnode(nodes, this_link.ds_node_ID, 'node_ID');
 
       % nodes.conn is a vector of link_IDs for the upstream/downstream links of
       % each node. It is 3x1 at 3-way confluences, and 2x1 at at 2-way. Not sure
@@ -59,7 +59,7 @@ function verifyarea(basins, links, this_basin, this_link, this_node)
    % pre-fix case, replace this_us_link_ID in this line with the known correct
    % one, 1390:
    %
-   % this_us_link = getlink(links, 1390, 'link_ID');
+   % this_us_link = hillsloper.getlink(links, 1390, 'link_ID');
    %
    % Then continue to check_extra_area and it matches.
 
@@ -97,12 +97,10 @@ function verifyarea(basins, links, this_basin, this_link, this_node)
    for n = 1:numel(this_us_link_ID)
 
       % The da field of this_us_link should equal the "extra area"
-      this_us_link = getlink(links, this_us_link_ID(n), 'link_ID');
-      this_us_link_hs_ID = this_us_link.hs_ID;
-      this_us_basin = getslope(basins, this_us_link_hs_ID);
-      this_us_basin_da = this_us_basin.da;
+      this_us_link = hillsloper.getlink(links, this_us_link_ID(n), 'link_ID');
+      this_us_basin = hillsloper.getslope(basins, this_us_link.hs_ID);
 
-      check_extra_area = this_extra_area - this_us_basin_da;
+      check_extra_area = this_extra_area - this_us_basin.da;
 
       % If the independent check on the extra area is more than 1% off from the
       % extra area, flag it

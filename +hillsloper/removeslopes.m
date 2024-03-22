@@ -26,9 +26,9 @@ function newslopes = removeslopes(slopes,rm_slope,rp_slope,rp_flag)
    xnew = [hsrp.X hsrm_m.X hsrm_p.X];
    ynew = [hsrp.Y hsrm_m.Y hsrm_p.Y];
    hspoly = polyshape(xnew,ynew);         % merged polyshape
-   [xnew,ynew] = boundary(hspoly);        % just the boundary
+   [xnew, ynew] = boundary(hspoly);        % just the boundary
    hspoly = polyshape(xnew,ynew);         % make a new polyshape
-   [xlim,ylim] = boundingbox(hspoly);     % new boundingbox
+   [xlim, ylim] = boundingbox(hspoly);     % new boundingbox
    % if the weird stuff near the outlet is problematic, try reverting to using
    % xnew,ynew as the x/y coordinates of the merged hillslope
 
@@ -37,20 +37,20 @@ function newslopes = removeslopes(slopes,rm_slope,rp_slope,rp_flag)
    nhs.BoundingBox = [xlim' ylim'];
    nhs.X           = xnew;
    nhs.Y           = ynew;
-   nhs.ncells      = hsrp.ncells+hsrm_m.ncells+hsrm_p.ncells;
-   nhs.da          = hsrp.da+hsrm_m.da+hsrm_p.da;
-   nhs.harea       = hsrp.harea+hsrm_m.harea+hsrm_p.harea;
+   nhs.ncells      = hsrp.ncells + hsrm_m.ncells + hsrm_p.ncells;
+   nhs.da          = hsrp.da + hsrm_m.da + hsrm_p.da;
+   nhs.harea       = hsrp.harea + hsrm_m.harea + hsrm_p.harea;
 
    % area-weighted elevation and slope
-   helev1          = hsrp.helev*hsrp.harea/nhs.harea;
-   helev2          = hsrm_m.helev*hsrm_m.harea/nhs.harea;
-   helev3          = hsrm_p.helev*hsrm_p.harea/nhs.harea;
-   nhs.helev       = roundn(helev1+helev2+helev3,0);
+   helev1          = hsrp.helev * hsrp.harea / nhs.harea;
+   helev2          = hsrm_m.helev * hsrm_m.harea / nhs.harea;
+   helev3          = hsrm_p.helev * hsrm_p.harea / nhs.harea;
+   nhs.helev       = round(helev1 + helev2 + helev3, 0);
 
-   hslp1           = hsrp.hslp*hsrp.harea/nhs.harea;
-   hslp2           = hsrm_m.hslp*hsrm_m.harea/nhs.harea;
-   hslp3           = hsrm_p.hslp*hsrm_p.harea/nhs.harea;
-   nhs.hslp        = roundn(hslp1+hslp2+hslp3,-4);
+   hslp1           = hsrp.hslp * hsrp.harea / nhs.harea;
+   hslp2           = hsrm_m.hslp * hsrm_m.harea / nhs.harea;
+   hslp3           = hsrm_p.hslp * hsrm_p.harea / nhs.harea;
+   nhs.hslp        = round(hslp1 + hslp2 + hslp3, 4);
 
    % remove and replace (update idx after each removal)
    newslopes       = slopes;

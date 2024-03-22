@@ -19,7 +19,7 @@ function slopes = makenewslopes(slopes, links, nodes, plotfig)
 
    % Process link connectivity if it hasnt been done yet
    if ~isfield(links,'ds_link_ID')
-      links = findDownstreamLinks(links,nodes);
+      links = hillsloper.findDownstreamLinks(links, nodes);
    end
 
    % Add link_ID and ds_link_ID to slopes
@@ -60,17 +60,20 @@ function slopes = makenewslopes(slopes, links, nodes, plotfig)
    % % this shows that the slopes.link_id field doesn't match the link_ID
    %
    % labelfields = {'links','id','slopes','link_id'};
-   % plothillsloper(slopes,links,nodes,'pauseflag',true,'labelfields',labelfields);
+   % hillsloper.plothillsloper(slopes, links, nodes, ...
+   %    'pauseflag', true, 'labelfields', labelfields);
    %
    % % this shows that the method above works and now slopes.link_ID matches link_ID
    % labelfields = {'links','link_ID','slopes','link_ID'};
-   % plothillsloper(slopes,links,nodes,'pauseflag',true,'labelfields',labelfields);
+   % hillsloper.plothillsloper(slopes, links, nodes, ...
+   %    'pauseflag', true, 'labelfields', labelfields);
 
    % % try plotting select hillslopes
    % test_slopes = slopes(isvec);
    % test_links = links([slopes(isvec).link_ID]+1);
    % labelfields = {'links','link_ID','slopes','link_ID'};
-   % plothillsloper(test_slopes,test_links,'pauseflag',true,'labelfields',labelfields);
+   % hillsloper.plothillsloper(test_slopes, test_links, ...
+   %    'pauseflag', true, 'labelfields', labelfields);
 
    % NOTE: once links are removed using removelink, the link_ID numbering will
    % no longer be consecutive, since links are removed. For the latest
@@ -144,7 +147,7 @@ function slopes = makenewslopes(slopes, links, nodes, plotfig)
 
    % plot the slopes if requested
    if plotfig == true
-      plothillsloper(slopes,links,nodes);
+      hillsloper.plothillsloper(slopes, links, nodes);
    end
 end
 
@@ -196,7 +199,7 @@ function [oldslopes, oldlinks] = test_old_method(newslopes, newlinks, nodes)
 
    % this shows that the method above works
    labelfields = {'links', 'link_ID', 'slopes', 'link_ID'};
-   plothillsloper(newslopes, newlinks, nodes, ...
+   hillsloper.plothillsloper(newslopes, newlinks, nodes, ...
       'pauseflag', true, 'labelfields', labelfields);
 
 

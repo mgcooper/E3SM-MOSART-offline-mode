@@ -1,11 +1,11 @@
 function plotBasinLinks(basins, links, hs_id_list, slopes)
 
    % Use this to confirm the links.hs_ID correctly map onto basins.hs_ID
-   
+
    if nargin < 3
       hs_id_list = [links.hs_ID];
    end
-   
+
    if nargin == 4
       plotSlopesLinks(basins, links, slopes, hs_id_list)
    end
@@ -16,8 +16,8 @@ function plotBasinLinks(basins, links, hs_id_list, slopes)
 
       hs_id = hs_id_list(n);
 
-      slope = getslope(basins, hs_id);
-      link = getlink(links, hs_id, 'hs_ID');
+      slope = hillsloper.getslope(basins, hs_id);
+      link = hillsloper.getlink(links, hs_id, 'hs_ID');
 
       link_lat = rmnan([link.Lat]);
       link_lon = rmnan([link.Lon]);
@@ -44,9 +44,9 @@ function plotSlopesLinks(basins, links, slopes, hs_id_list)
 
       hs_id = hs_id_list(n);
 
-      [slope_p, slope_n] = getslope(slopes, hs_id);
-      basin = getslope(basins, hs_id);
-      link = getlink(links, hs_id, 'hs_ID');
+      [slope_p, slope_n] = hillsloper.getslope(slopes, hs_id);
+      basin = hillsloper.getslope(basins, hs_id);
+      link = hillsloper.getlink(links, hs_id, 'hs_ID');
 
 
       link_lat = rmnan([link.Lat]);

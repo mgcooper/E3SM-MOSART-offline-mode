@@ -12,7 +12,7 @@ function outlet = getOutletFeatures(slopes, links, nodes, varargin)
    %
    % Also try this, added in findDownstreamLinks:
    % newlinks([newlinks.isOutlet]);
-   
+
    [args, params, nargs] = parseparampairs(varargin, [], 'asstruct');
 
    ID = [links.link_ID];
@@ -34,7 +34,7 @@ function outlet = getOutletFeatures(slopes, links, nodes, varargin)
    assertEqual( ...
       ID(max([links.us_da_km2]) == [links.us_da_km2]), ...
       outlet.link.link_ID)
-   
+
    % Compute the basin area in m2 for comparison with the known area of the basin
    outlet.basinarea = max([links.us_da_km2])*1000*1000;
 

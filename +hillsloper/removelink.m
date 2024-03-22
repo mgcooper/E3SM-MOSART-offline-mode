@@ -117,8 +117,8 @@ function [links, nodes] = removelink(links, nodes, rm_link_ID, us_link_ID, ...
    rp_node_ID = links(i_rp_link).us_node_ID;
 
    %% Process nodes
-   [nodes, rm_node, rp_node] = mergenodes(nodes, rm_node_ID, rp_node_ID, ...
-      rm_slope_ID, rm_link_ID, true);
+   [nodes, rm_node, rp_node] = hillsloper.mergenodes(nodes, ...
+      rm_node_ID, rp_node_ID, rm_slope_ID, rm_link_ID, true);
 
    %% Process us_link's
    rp_link = links(i_rp_link);

@@ -23,7 +23,7 @@ function [newinfo,roff,roffMP] = makeAtsRunoff( ...
    hs_id = [links.hs_ID];
 
    % plot the hillsloper data if needed for debugging
-   % plothillsloper(mosartslopes,links)
+   % hillsloper.plothillsloper(mosartslopes, links)
 
    %% create the output path if it doesn't exist
 

@@ -126,7 +126,7 @@ Data = settableprops(Data, {'Area_units'}, ...
 Data = settableunits(Data, 'm3 d-1');
 
 % Add an hs_ID field to the ATS "Data" table
-basins = readHillsloperData(sitename, "basins");
+basins = hillsloper.readfiles(sitename, "basins");
 Data = settableprops(Data, "hs_ID", "table", {[basins.hs_ID]});
 
 %% Save the data

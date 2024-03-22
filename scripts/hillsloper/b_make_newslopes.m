@@ -9,7 +9,7 @@ clean
 
 %% Set options
 opts = const( ...
-   'save_data', false, ...
+   'save_data', true, ...
    'plot_map', true, ...
    'plot_slopes', false ...
    );
@@ -22,24 +22,24 @@ pathdata = getenv('USER_MOSART_DOMAIN_DATA_PATH');
 pathsave = getenv('USER_MOSART_DOMAIN_DATA_PATH');
 
 %% Read in the hillsloper data
-[basins, slopes, links, nodes, boundary] = readHillsloperData(sitename, ...
+[basins, slopes, links, nodes, boundary] = hillsloper.readfiles(sitename, ...
    ["basins", "slopes", "links", "nodes", "boundary"]);
 
 %% Plot the hillslopes
 
 % Probably very slow with full Sag basin
 if opts.plot_slopes
-   mapslopes(basins, links, nodes, boundary, 'worldmap')
-   % plothillsloper(slopes, links); % inletID, outletID mapslopes is faster
+   hillsloper.mapslopes(basins, links, nodes, boundary, 'worldmap')
+   % hillsloper.plothillsloper(slopes, links); % inletID, outletID mapslopes is faster
 end
 
 % Compute topo. This is the only item from a_save_hillsloper that was not here.
 % This is not needed with latest full Sag config, it is needed for prior
 % versions that did not have elevation and/or slope.
-% slopes = computeHillslopeTopo(slopes, ftopo);
+% slopes = hillsloper.computeHillslopeTopo(slopes, ftopo);
 
 % Check for bad hillslope topology
-info = verifyTopology(slopes, links, basins, 'hs_ID', true);
+info = hillsloper.verifyTopology(slopes, links, basins, 'hs_ID', true);
 
 %% Fix topology if necessary
 
@@ -53,7 +53,7 @@ ds_link = 2665;         % downstream link(s) (flow into orphan's ds node)
 rp_link = 2663;         % replacement link, downstream of orphan
 rm_flag = true;         % if true, remove the slope that drains to rm_link
 
-[links, nodes] = removelink( ...
+[links, nodes] = hillsloper.removelink( ...
    links,   ...
    nodes,      ...
    rm_link,    ...
@@ -63,10 +63,10 @@ rm_flag = true;         % if true, remove the slope that drains to rm_link
    rm_flag  );
 
 %% Make a new links table with upstream/downstream link connectivity
-[links, inletID, outletID] = findDownstreamLinks(links, nodes);
+[links, inletID, outletID] = hillsloper.findDownstreamLinks(links, nodes);
 
 % Do an upstream walk from the link below the bad link
-% plotlinks(links, 2661, [rp_link us_link]);
+% hillsloper.plotlinks(links, 2661, [rp_link us_link]);
 
 %% Fix basins, do this after findDownstreamLinks
 
@@ -77,10 +77,10 @@ basins(427) = [];
 basins = hillsloper.fixda(basins, links, nodes);
 
 %% Check topology again
-newinfo = verifyTopology(slopes, links, basins, 'hs_ID', true);
+newinfo = hillsloper.verifyTopology(slopes, links, basins, 'hs_ID', true);
 
 % Confirm the outlet link can be identified
-outlet = getOutletFeatures(slopes, links, nodes, ...
+outlet = hillsloper.getOutletFeatures(slopes, links, nodes, ...
    'plot', false, 'basin', boundary);
 
 % Confirm that the bad node is no longer in the links
@@ -94,19 +94,22 @@ links(ismember([links.ds_node_ID], rm_node_ID)).link_ID
 
 % % before this can be run, it is necessary to identify and fix links without
 % % hillslopes and links with multiple hillslopes
-% slopes = makenewslopes(slopes, links, nodes, false);
+% slopes = hillsloper.makenewslopes(slopes, links, nodes, false);
 %
 % % test rebuilding links to see if the numbering is correct
-% [links, inletID, outletID] = findDownstreamLinks(links, nodes);
+% [links, inletID, outletID] = hillsloper.findDownstreamLinks(links, nodes);
 
 %% Build a table with the MOSART input file information
 
-% PICK UP HERE - now the upstream area should be correct, so fix the hydraulic
-% geometry, build a new mosart file, run a new sim to test the various changes
-% such as not using nele, areaTotal, etc., also confirm the water balance using
-% the change in storage, then return to the issue of selecting the usgs link and
-% similarly the toniolos, fix up the sag_data struct, the weird subbasin offset
-% thing, and hand the data over to Bo
+% PICK UP HERE - now the upstream area should be correct, so
+% - DONE fix the hydraulic geometry
+% - build a new mosart file
+% - run a new sim to test not using nele, areaTotal, etc.,
+% - confirm the water balance using the change in storage
+% - then return to selecting the usgs link and similarly the toniolo sites
+% - fix up the sag_data struct,
+% - fix the spatial offset thing
+% - hand the data over to Bo
 
 mosartslopes = mosart.hillsloperToMosart(links, slopes, basins);
 
@@ -156,12 +159,13 @@ if debug == true
    % Load the data:
    % pathsave = getenv('USER_MOSART_DOMAIN_DATA_PATH');
    % load(fullfile(pathsave, 'mosart_hillslopes'),'mosartslopes','links','slopes');
-   % [basins, nodes, boundary] = readHillsloperData(sitename, 'basins', 'nodes', 'boundary');
+   % [basins, nodes, boundary] = hillsloper.readfiles( ...
+   %    sitename, 'basins', 'nodes', 'boundary');
 
    %% conpare
 
    % Identify the outlet link
-   outlet = getOutletFeatures(mosartslopes, links, nodes, ...
+   outlet = hillsloper.getOutletFeatures(mosartslopes, links, nodes, ...
       'plot', false, 'basin', boundary);
 
    % The us_da field for the outlet should equal the total upstream area
@@ -180,11 +184,11 @@ if debug == true
    % % load([pathtopo 'sag_dems'],'R5','Z5');    % 160 m dem, for plotting
    % % R = R5; Z = Z5; clear R5 Z5
    %
-   % % this section replaced by mapslopes()
+   % % this section replaced by hillsloper.mapslopes()
    %
    % %% The next two plots are for checking the algorithm
    %
-   % % replace with call to plotnetwork()
+   % % replace with call to hillsloper.plotnetwork()
    %
    % %% below here is mostly testing to sort out the links
    %

@@ -2,7 +2,7 @@ function compareslopes(slopes, testslopes)
 
    % This is a snippet from comparing the modified slopes returned by
    % makenewslopes with makenewlinks (now findDownstreamLinks)
-   
+
    tf = isequal(fieldnames(testslopes), fieldnames(slopes));
 
    if tf

@@ -35,15 +35,15 @@ function mslopes = hillsloperToMosart(links, slopes, basins)
       hs_ID = links(n).hs_ID;
 
       % Get the basin (the merged +/- hillslope)
-      hs_info = getslope(basins, hs_ID);
+      hs_info = hillsloper.getslope(basins, hs_ID);
 
       % Compute combined area, area-weighted slope and elevation. Also use this
       % method for earlier versions where the "basins" table is unavailable.
-      hs_merged = mergeslopes(slopes, hs_ID);
+      hs_merged = hillsloper.mergeslopes(slopes, hs_ID);
 
       % Get the positive and negative slope from "slopes". This method replaced
       % by area-weighted slope and elevation in mergeslopes.
-      % [hs_p, hs_n] = getslope(slopes, hs_ID);
+      % [hs_p, hs_n] = hillsloper.getslope(slopes, hs_ID);
 
       % Pull out the area-weighted slope and elevation
       hslp = hs_merged.hslp;
@@ -51,7 +51,7 @@ function mslopes = hillsloperToMosart(links, slopes, basins)
       harea = hs_merged.harea_m2;
 
       % Can use this to double check
-      % plotBasinLinks(basins, links, hs_ID); hold on
+      % hillsloper.plotBasinLinks(basins, links, hs_ID); hold on
       % plot(rmnan([hs_merged.Lon]), rmnan([hs_merged.Lat]), ':')
 
       % pull out values needed for input file, convert km to m where needed

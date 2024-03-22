@@ -1,13 +1,13 @@
 function [links, inletID, outletID] = findDownstreamLinks(links, nodes)
    %FINDDOWNSTREAMLINKS add ID->dnID connectivity and inlet/outlet info to links
    %
-   % links = findDownstreamLinks(links,nodes) uses LINKS and NODES geostructs
-   % from readHillsloperData output to identify upstream/downstream link
-   % connectivity and basin inlet (headwater) and outlet links; 
-   % 
-   % [links,inletID,outletID] = findDownstreamLinks(links,nodes) also returns
+   % LINKS = HILLSLOPER.FINDDOWNSTREAMLINKS(LINKS, NODES) uses LINKS and NODES
+   % geostructs from HILLSLOPER.READFILES output to identify upstream/downstream
+   % link connectivity and basin inlet (headwater) and outlet links;
+   %
+   % [LINKS, INLETID, OUTLETID] = FINDDOWNSTREAMLINKS(LINKS, NODES) also returns
    % the inlet and outlet link_IDs
-   % 
+   %
    % The following fields are added to LINKS:
    %  ds_link_ID
    %  us_hs_ID
@@ -16,7 +16,7 @@ function [links, inletID, outletID] = findDownstreamLinks(links, nodes)
    %  ds_conn_ID
    %  isInlet
    %  isOutlet
-   % 
+   %
    % definitions
    %
    % hs_ID         = id of the hillslope in which a link exists
@@ -53,7 +53,7 @@ function [links, inletID, outletID] = findDownstreamLinks(links, nodes)
    % % n=1:numel(links), so this loop must complete before adding additional
    % % information based on the link_ID -> ds_link_ID connectivity.
    % % TLDR: don't add stuff to this loop.
-   
+
    % Note: The length(us_conn_id) > 1 condition is key to determine the flow
    % network, together with the inletID and outletID conditions), because it
    % indicates confluences, and i think walking each confluence guarantees
@@ -122,7 +122,7 @@ function [links, inletID, outletID] = findDownstreamLinks(links, nodes)
    assertEqual( ...
       links(max([links.us_da_km2]) == [links.us_da_km2]).link_ID, ...
       outletID)
-   
+
    % % 20 March 2023, commented this out b/c it complicates comparison with the og
    % % shapefiles e.g. in qgis trying to sort out orphan links/nodes
    % % Renumber the link_ID field to start at 1, rather than zero

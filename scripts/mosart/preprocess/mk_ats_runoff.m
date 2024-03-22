@@ -119,16 +119,16 @@ timeMP = roffMP.Time;
 roffMP = roffMP.roffMP;
 
 figure('Position',[165   299   762   294]);
-subplot(1,2,1);
-plot(timeATS,roffATS); hold on;
-plot(timeMP,roffMP);
-legend('ATS','Ming Pan');
+subplot(1, 2, 1);
+plot(timeATS, roffATS); hold on
+plot(timeMP, roffMP);
+legend('ATS', 'Ming Pan');
 ylabel('daily runoff [m^3 s^{-1}]');
 
 subplot(1,2,2);
-plot(timeATS,cumsum(roffATS.*(3600*24/1e9))); hold on;
-plot(timeATS,cumsum(roffMP.*(3600*24/1e9)));
-l = legend('ATS','Ming Pan');
+plot(timeATS, cumsum(roffATS * 3600 * 24 / 1e9)); hold on
+plot(timeATS, cumsum(roffMP * 3600 * 24 / 1e9));
+l = legend('ATS', 'Ming Pan');
 ylabel('cumulative runoff [km^3]');
 % figformat('linelinewidth',1.5)
 

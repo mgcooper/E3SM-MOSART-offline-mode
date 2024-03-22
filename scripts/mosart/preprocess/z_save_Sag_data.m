@@ -217,7 +217,7 @@ xlabel('eastings [m]')
 ylabel('northings [m]')
 
 %% find the hillslopes within the gaged basin
-mask = maskbasin(tiles, xb, yb);
+mask = hillsloper.maskbasin(tiles, xb, yb);
 tiles_hs = tiles;
 tiles = tiles(mask);
 

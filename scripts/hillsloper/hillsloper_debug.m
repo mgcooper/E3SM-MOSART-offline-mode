@@ -149,7 +149,7 @@ function debug_upstream_area
       2013, 'casename', 'ats', 'runid', 'sag_basin');
 
    % Read the shapefiles
-   [basins, slopes, links, nodes] = readHillsloperData('sag_basin', ...
+   [basins, slopes, links, nodes] = hillsloper.readfiles('sag_basin', ...
       {'basins', 'slopes', 'links', 'nodes'});
 
    % Read the ats data Bo provided

@@ -152,7 +152,7 @@ function [basins, slopes] = assignID(basins, slopes)
          matches(m) = true;
 
          % this shows that slopes.link_ID does not match
-         % check = getslope(slopesp, hs_ID);
+         % check = hillsloper.getslope(slopesp, hs_ID);
          % [link_ID, check.link_ID] % 14
 
          islope = abs([slopes.hs_ID]) == hs_ID;
@@ -171,10 +171,10 @@ function [basins, slopes] = assignID(basins, slopes)
 
    hs_ID = 183;
 
-   slope = getslope(slopes, hs_ID);
+   slope = hillsloper.getslope(slopes, hs_ID);
    link_ID = slope.link_ID;
-   link = getlink(links, link_ID);
-   basin = getslope(basins, hs_ID);
+   link = hillsloper.getlink(links, link_ID);
+   basin = hillsloper.getslope(basins, hs_ID);
 
    isequal(link.hs_ID, slope.hs_ID)
    isequal(link.hs_ID, basin.hs_ID)
@@ -272,7 +272,7 @@ function [basins, slopes] = assignID(basins, slopes)
          matches(m) = true;
 
          % see what slopes says
-         % check = getslope(slopesp, hs_ID); % link_ID is 2x the one expected
+         % check = hillsloper.getslope(slopesp, hs_ID); % link_ID is 2x the one expected
          % [link_ID, check.link_ID] % 14
 
          figure;

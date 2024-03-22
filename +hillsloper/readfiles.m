@@ -1,9 +1,11 @@
-function varargout = readHillsloperData(sitename, requests)
-   %READHILLSLOPERDATA
+function varargout = readfiles(sitename, requests)
+   %READFILES Read hillsloper files into memory.
    %
-   % varargout = readHillsloperData(sitename, outputs) Reads hillsloper outputs
-   % for SITENAME. Outputs (VARARGOUT) are returned for each member of input
-   % variable REQUESTS.
+   % [FILE1, FILE2, ..., FILEN] = HILLSLOPER.READFILES(SITENAME, FILENAMES)
+   % Reads hillsloper files for SITENAME. Outputs (FILE1, FILE2, ..., FILEN) are
+   % returned for each member of input variable FILENAMES.
+   %
+   % SEE ALSO:
 
    arguments
       sitename (1, :) char {mustBeMember(sitename, ...
