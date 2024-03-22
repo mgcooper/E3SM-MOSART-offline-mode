@@ -1,89 +1,196 @@
-function [basins,slopes,links,nodes,boundary,ftopo] = readHillsloperData(sitename)
+function varargout = readHillsloperData(sitename, requests)
+   %READHILLSLOPERDATA
+   %
+   % varargout = readHillsloperData(sitename, outputs) Reads hillsloper outputs
+   % for SITENAME. Outputs (VARARGOUT) are returned for each member of input
+   % variable REQUESTS.
+
+   arguments
+      sitename (1, :) char {mustBeMember(sitename, ...
+         {'sag_basin', 'trib_basin', 'test_basin'})}
+      requests (1, :) string {mustBeMember(requests, ...
+         ["basins", "slopes", "links", "nodes", "boundary"])} ...
+         = ["basins", "slopes", "links", "nodes", "boundary"]
+   end
+
+   % Parse inputs
+   validoutputs = ["basins", "slopes", "links", "nodes", "boundary"];
+   opts = optionParser(validoutputs, requests);
+
+   % Note: previously there was an option to return the topography data
+   % filename, but not the actual data. See getFileNames.
+
+   % Get filenames and map projections
+   mapproj = getMapProj(sitename);
+   filenames = getFileNames(sitename);
+
+   % Read the data
+   for n = 1:nargout
+      if opts.(requests(n))
+         Data.(requests(n)) = readData(filenames.(requests(n)));
+      end
+   end
+
+   % Convert strings to doubles, consistent fieldnames, and remove fields
+   if opts.links
+      Data.links = convertStringFieldsToDouble(Data.links);
+      Data.links = renameLinksFields(Data.links);
+      Data.links = updateCoordinateFields(Data.links, 'links');
+   end
+   if opts.nodes
+      Data.nodes = convertStringFieldsToDouble(Data.nodes);
+      Data.nodes = renameNodesFields(Data.nodes);
+      Data.nodes = updateCoordinateFields(Data.nodes, 'nodes');
+   end
+   % basins and slopes don't have any strings
+   if opts.basins
+      Data.basins = renameSlopesFields(Data.basins);
+      Data.basins = updateCoordinateFields(Data.basins, 'basins');
+   end
+   if opts.slopes
+      Data.slopes = renameSlopesFields(Data.slopes);
+      Data.slopes = updateCoordinateFields(Data.slopes, 'slopes');
+      % Data.slopes = removeSlopesFields(Data.slopes); % Decided to keep all fields
+   end
+
+   % Add the hillslope area field to links
+   if opts.links
+      Data.links = addHillslopeAreaField(Data.links, Data.slopes);
+   end
+
+   % Parse outputs
+   varargout = cell(nargout, 1);
+   for n = 1:nargout
+      switch requests(n)
+         case 'basins'
+            varargout{n} = Data.basins;
+         case 'slopes'
+            varargout{n} = Data.slopes;
+         case 'links'
+            varargout{n} = Data.links;
+         case 'nodes'
+            varargout{n} = Data.nodes;
+         case 'boundary'
+            varargout{n} = Data.boundary;
+            % case 'ftopo'
+            %    varargout{n} = Data.ftopo;
+      end
+   end
+end
+
+%% Set filenames
+function filenames = getFileNames(sitename)
+
+   % The ftopo's were added to replicate original a_save_hillsloper behavior. If
+   % newer hillsloper data includes elevation and slope, topo data is not needed
 
    pathdata = getenv('USER_HILLSLOPER_DATA_PATH');
-
-   % flist = getlist(pathdata,'*.shp'); % {flist.name}'
-
-   % The ftopo's are temporary, added to replicate original a_save_hillsloper
-   % behavior. If newer hillsloper data includes elevation and slope, the topo data
-   % is not needed.
-
    switch sitename
       case 'sag_basin'
-         
-         % jul 2023, replaced Sag_hillslopes.shp with Sag_basins.shp, which are
+
+         % Jul 2023: Sag_hillslopes.shp replaced with Sag_basins.shp, which are
          % the pre-split slopes
-         fbounds = fullfile(pathdata,'Sag_boundary.shp');
-         fslopes = fullfile(pathdata,'Sag_hillslopes.shp');
-         fbasins = fullfile(pathdata,'Sag_basins.shp');
-         flinks = fullfile(pathdata,'Sag_links.shp');
-         fnodes = fullfile(pathdata,'Sag_nodes.shp');
-         ftopo = 'IfSAR_5m_DTM_Alaska_Albers_Sag_basin.tif';
-         
-         % mapproj is not used here anymore but would be needed for
-         % computeHillslopeTopo
-         mapproj = try_(@() projcrs(3338,'Authority','EPSG'));
-         
+         filenames.boundary = fullfile(pathdata, 'Sag_boundary.shp');
+         filenames.slopes = fullfile(pathdata, 'Sag_hillslopes.shp');
+         filenames.basins = fullfile(pathdata, 'Sag_basins.shp');
+         filenames.links = fullfile(pathdata, 'Sag_links.shp');
+         filenames.nodes = fullfile(pathdata, 'Sag_nodes.shp');
+         filenames.topo = fullfile(getenv('USER_DOMAIN_TOPO_DATA_PATH'), ...
+            'IfSAR_5m_DTM_Alaska_Albers_Sag_basin.tif');
+
          % note: the "full sag" gaged basin is:
          % S = loadgis('sag_basin_15908000_aka.shp');
 
       case 'trib_basin'
          % note: this is not the actual outline of the hillsloper hillslopes, need
          % to replace with them eventually
-         fbounds = '/Users/coop558/work/data/interface/sag_basin/trib_basin/trib_boundary/trib_boundary.shp';
-         fslopes = fullfile(pathdata,'Sag_gage_HUC_hillslopes.shp');
-         flinks = fullfile(pathdata,'Sag_gage_HUC_links.shp');
-         fnodes = fullfile(pathdata,'Sag_gage_HUC_nodes.shp');
-         ftopo = 'Sag_gage_HUC_filled.tif';
-         
+         filenames.boundary = fullfile(getenv('USERDATAPATH'), ...
+            'interface/sag_basin/trib_basin/trib_boundary/trib_boundary.shp');
+         filenames.slopes = fullfile(pathdata,'Sag_gage_HUC_hillslopes.shp');
+         filenames.links = fullfile(pathdata,'Sag_gage_HUC_links.shp');
+         filenames.nodes = fullfile(pathdata,'Sag_gage_HUC_nodes.shp');
+         filenames.topo = fullfile(getenv('USER_DOMAIN_TOPO_DATA_PATH'), ...
+            'Sag_gage_HUC_filled.tif');
+
+      case 'test_basin'
+         filenames.boundary = fullfile(getenv('USERGISPATH'), ...
+            'Sag_test_HUC12_NHD_Alaska_Albers.shp');
+         filenames.slopes = fullfile(pathdata, 'huc_190604020404_hillslopes.shp');
+         filenames.links = fullfile(pathdata, 'huc_190604020404_links_w_hs_id.shp');
+         filenames.nodes = fullfile(pathdata, 'huc_190604020404_nodes.shp');
+         filenames.topo = fullfile(getenv('USER_DOMAIN_TOPO_DATA_PATH'), ...
+            'huc_190604020404.tif');
+   end
+end
+
+%% Get map projections
+function mapproj = getMapProj(sitename)
+   switch sitename
+      case 'sag_basin'
+
+         % mapproj is not used here anymore but would be needed for
+         % computeHillslopeTopo
+         mapproj = try_(@() projcrs(3338,'Authority','EPSG'));
+
+      case 'trib_basin'
          mapproj = try_(@() projcrs(3338,'Authority','EPSG'));
 
       case 'test_basin'
-         fbounds = '/Users/coop558/work/data/interface/GIS_data/Sag_test_HUC12_NHD_Alaska_Albers.shp';
-         fslopes = fullfile(pathdata,'huc_190604020404_hillslopes.shp');
-         flinks = fullfile(pathdata,'huc_190604020404_links_w_hs_id.shp');
-         fnodes = fullfile(pathdata,'huc_190604020404_nodes.shp');
-         ftopo = 'huc_190604020404.tif';
-         
          % For the huc 12 I used the NAD 83 (2011) alaska albers which is 6393.
          mapproj = try_(@() projcrs(6393,'Authority','EPSG'));
    end
+end
 
-   ftopo = fullfile(getenv('USER_DOMAIN_TOPO_DATA_PATH'),ftopo);
-
-   try % for sag_basin, links is file 3, nodes is 4, so need to use explicit method
-      links = shaperead(flinks);
-      nodes = shaperead(fnodes);
-      slopes = shaperead(fslopes);
-      basins = shaperead(fbasins);
-      boundary = shaperead(fbounds);
-
+%%
+function data = readData(filename)
+   try
+      data = shaperead(filename);
    catch ME
-      
-      % NOTE: nodes X,Y fields come in as Lon,Lat with m_map, not sure about the
-      % others
-      
+      % NOTE: m_map reads nodes X,Y fields as Lon,Lat, not sure about the others
       if strcmp(ME.identifier,'MATLAB:license:checkouterror')
-         links = loadgis(flinks,'m_map');
-         nodes = loadgis(fnodes,'m_map');
-         slopes = loadgis(fslopes,'m_map');
-         basins = loadgis(fbasins, 'm_map');
-         boundary = loadgis(fbounds,'m_map');
+         data = loadgis(filename, 'm_map');
       end
    end
+end
 
-   %% convert strings to doubles
+%% Add Lat/Lon fields
+function data = updateCoordinateFields(data, structname)
+   try
+      data = updateCoordinates(data, 3338, "Authority", "EPSG");
+   catch ME
+      % likely mapping toolbox checkout error
+   end
 
-   % basins and slopes don't have any strings
+   % Add scalar x/y and lat/lon fields for easier plotting (e.g., attributes)
+   if strcmp(structname, {'links', 'slopes', 'basins'})
 
-   V = fieldnames(links);
-   V = V(structfun(@ischar, links(1,:)));
+      for m = 1:numel(data)
+
+         % To construct the fieldname, remove the plurual e.g. links->link
+         fieldname = structname(1:end-1);
+         data(m).([fieldname '_X']) = nanmean([data(m).X]);
+         data(m).([fieldname '_Y']) = nanmean([data(m).Y]);
+         data(m).([fieldname '_Lat']) = nanmean([data(m).Lat]);
+         data(m).([fieldname '_Lon']) = nanmean([data(m).Lon]);
+      end
+   end
+end
+
+%%
+function S = convertStringFieldsToDouble(S)
+
+   % This works for both nodes and links, but an older version of nodes may
+   % not work as noted in an older version: "nodes is more complicated, b/c some
+   % fields have multiple values"
+
+   V = fieldnames(S);
+   V = V(structfun(@ischar, S(1,:)));
    V = V(~ismember(V, 'Geometry'));
 
    for n = 1:length(V)
-      di = {links.(V{n})};
+      di = {S.(V{n})};
       for j = 1:length(di)
-         [links(j).(V{n})] = str2double(strsplit(di{j},','));
+         [S(j).(V{n})] = str2double(strsplit(di{j},','));
       end
    end
 
@@ -93,83 +200,58 @@ function [basins,slopes,links,nodes,boundary,ftopo] = readHillsloperData(sitenam
    %    [links(1:length(links)).(V{n})] = di{:};
    % end
 
-   % nodes is more complicated, because some fields have multiple values
-   V = fieldnames(nodes);
-   V = V(structfun(@ischar, nodes(1,:)));
-   V = V(~ismember(V, 'Geometry'));
-
-   for n = 1:length(V)
-      di = {nodes.(V{n})};
-      for j = 1:length(di)
-         [nodes(j).(V{n})] = str2double(strsplit(di{j},','));
-      end
-   end
-
    % this shows that some values of upstream_r are vectors, which is why the
    % icon in the struct is different than the others
    % numel([links.upstream_r]);
+end
 
-   %% convert varnames to consistent terminology
-
-   % links
+%% Rename fields
+function links = renameLinksFields(links)
    oldfields = {'id','us_node_id','ds_node_id','hs_id','upstream_r', 'downstream'};
    newfields = {'link_ID','us_node_ID','ds_node_ID','hs_ID','us_link_ID','ds_link_ID'};
    ireplace = ismember(oldfields, fieldnames(links));
    links = renamestructfields(links,oldfields(ireplace),newfields(ireplace));
+end
 
-   % slopes / basins
+function slopes = renameSlopesFields(slopes)
+   % Works for slopes and basins
    oldfields = {'hs_id','parent_id','link_id','basin_id'};
    newfields = {'hs_ID','parent_ID','link_ID','hs_ID'};
    ireplace = ismember(oldfields, fieldnames(slopes));
    slopes = renamestructfields(slopes,oldfields(ireplace),newfields(ireplace));
+end
 
-   % basins
-   ireplace = ismember(oldfields, fieldnames(basins));
-   basins = renamestructfields(basins,oldfields(ireplace),newfields(ireplace));
-
-   % nodes
+function nodes = renameNodesFields(nodes)
    oldfields = {'id','hs_id'};
    newfields = {'node_ID','hs_ID'};
    ireplace = ismember(oldfields, fieldnames(nodes));
    nodes = renamestructfields(nodes,oldfields(ireplace),newfields(ireplace));
-   
-   % % decided to leave this for now, but
-   % % remove unneccesary fields (copied from makenewslopes 15 March 2023)
+end
+
+function slopes = removeSlopesFields(slopes)
+
+   % Even if I want to call this function, endbasin and possibly others should
+   % not be removed.
    % removeVars = {'link_id', 'outlet_idx', 'bp', 'endbasin'};
    % for n = 1:numel(removeVars)
    %    if isfield(slopes, removeVars{n})
    %       slopes = rmfield(slopes, removeVars{n});
    %    end
    % end
-   
-   % add Lat/Lon fields
-   try
-      links = updateCoordinates(links, 3338, "Authority", "EPSG");
-      nodes = updateCoordinates(nodes, 3338, "Authority", "EPSG");
-      slopes = updateCoordinates(slopes, 3338, "Authority", "EPSG");
-      basins = updateCoordinates(basins, 3338, "Authority", "EPSG");
-      boundary = updateCoordinates(boundary, 3338, "Authority", "EPSG");
-   catch
-      % likely mapping toolbox checkout error
-   end
-   
-   %% Add scalar x/y and lat/lon to links
-   
-   % This is useful for plotting link attributes, e.g. to compare with slopes
-   for m = 1:numel(links)
-      links(m).link_X = nanmean([links(m).X]);
-      links(m).link_Y = nanmean([links(m).Y]);
-      links(m).link_Lat = nanmean([links(m).Lat]);
-      links(m).link_Lon = nanmean([links(m).Lon]);
-      
-      slopes(m).slope_X = nanmean([slopes(m).X]);
-      slopes(m).slope_Y = nanmean([slopes(m).Y]);
-      slopes(m).slope_Lat = nanmean([slopes(m).Lat]);
-      slopes(m).slope_Lon = nanmean([slopes(m).Lon]);
-      
-      basins(m).basin_X = nanmean([basins(m).X]);
-      basins(m).basin_Y = nanmean([basins(m).Y]);
-      basins(m).basin_Lat = nanmean([basins(m).Lat]);
-      basins(m).basin_Lon = nanmean([basins(m).Lon]);
+end
+
+function links = addHillslopeAreaField(links, slopes)
+   %Add hillslope area to links by combining the pos/neg slopes. This can be
+   %done before removing links in the fix topology step as long as the
+   %link.hs_ID field maps correctly to the slopes.hs_ID field, which is the case
+   %for full Sag v2.
+
+   % Note that ATS sim's use the sum of pos/neg, not the "basins" combined area
+   linkIDs = [links.link_ID];
+   for n = 1:length(linkIDs)
+      hs_ID = links(n).hs_ID;
+      hs_area = (sum([slopes([slopes.hs_ID] == hs_ID).area_km2]) + ...
+         sum([slopes([slopes.hs_ID] == -hs_ID).area_km2])) * 1e6;
+      links(n).hs_area_m2 = hs_area;
    end
 end

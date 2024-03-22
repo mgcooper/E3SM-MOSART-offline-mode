@@ -1,28 +1,29 @@
 function info = verifyTopology(slopes, links, basins, field, showinfo)
    %VERIFYTOPOLOGY Verify hillsloper topology is valid
-   % 
+   %
    % INFO = VERIFYTOPOLOGY(SLOPES, LINKS, NODES, BASINS, FIELD, TRUE) finds
    % links with zero, nan, missing, or more than one element in FIELD, which
    % indicates bad topology, and returns information about the elements of
    % slopes, links, basins, and nodes needed to fix the bad topology.
-   % 
+   %
    % If FIELD = 'hs_ID', then information is returned for slopes, links, nodes,
-   % and basins, because they each have that field. 
-   % 
+   % and basins, because they each have that field.
+   %
    % If FIELD = 'link_ID', then information is returned for slopes and links,
    % because they each have that field but basins and nodes does not.
-   % 
+   %
    % This function looks for links with zero, nan, missing, or more than one
-   % element in the hs_ID field, which indicates bad topology. 
-   % 
+   % element in the hs_ID field, which indicates bad topology.
+   %
    % Common fields:
-   % hs_ID           slopes, links, basins, nodes 
+   % hs_ID           slopes, links, basins, nodes
    % link_ID         slopes, links
    %
    % See also: removelink
-   
-   % TODO: add nodes
-   
+
+   % TODO: add nodes, verify that this checks for links with bad hs_ID but also
+   % slopes with bad link_ID
+
    if nargin < 4
       field = 'hs_ID';
    end
@@ -43,22 +44,22 @@ function info = verifyTopology(slopes, links, basins, field, showinfo)
          % links and slopes have link_ID
          info.links = collectInfo(links, field, showinfo);
          info.slopes = collectInfo(slopes, field, showinfo);
-         
+
       otherwise
-         
+
    end
 
-   % Get the link ID for the link with a nan hillslope. Note that the
-   % information added below provides the info needed to fix hillsloper v2 sag
-   % river basin, but I am not sure it would work in general. In this case,
-   % there is one extra link, one extra node, and one extra basin, but there are
-   % no extra slopes (the extra basin is only in the combined 'basins' struct,
-   % the 'slopes' struct does not have the error).
-
+   %% Get the link ID for the link with a nan hillslope.
+   %
+   % Note that the information added below provides the info needed to fix
+   % hillsloper v2 sag river basin, but I am not sure it would work in general.
+   % In this case, there is one extra link, one extra node, and one extra basin,
+   % but there are no extra slopes (the extra basin is only in the combined
+   % 'basins' struct, the 'slopes' struct does not have the error).
    if sum(isnan([links.hs_ID])) > 0
       info.rm_link_ID = links(isnan([links.hs_ID])).link_ID;
       info.rm_node_ID = links([links.link_ID] == info.rm_link_ID).us_node_ID;
-      
+
       % check if any slopes have the bad link id
       try
          % If the bad link is not associated with an hs_ID field in slopes, this
