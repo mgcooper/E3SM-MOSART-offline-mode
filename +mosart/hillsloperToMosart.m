@@ -1,4 +1,4 @@
-function mosart = hillsloperToMosart(links, slopes, basins, Data)
+function mslopes = hillsloperToMosart(links, slopes, basins)
    %HILLSLOPERTOMOSART Convert hillsloper data tables to mosart data table.
    %
    % VERY IMPORTANT: If there is non-consecutive hs_ID numbering (which there
@@ -17,6 +17,7 @@ function mosart = hillsloperToMosart(links, slopes, basins, Data)
    proj = projcrs(3338, 'Authority', 'EPSG');
    % projcrs(6393,'Authority','EPSG');
 
+   % Define the fields
    fields = {
       'Geometry', 'BoundingBox', 'X_hs', 'Y_hs', 'X_link', 'Y_link', ...
       'Lat_hs', 'Lon_hs', 'Lat_link', 'Lon_link', 'latixy', 'longxy', ...
@@ -24,8 +25,9 @@ function mosart = hillsloperToMosart(links, slopes, basins, Data)
       'rwid', 'rwid0', 'gxr', 'hslp', 'twid', 'tslp', 'area', ...
       ... 'areaTotal0', 'areaTotal', 'areaTotal2', ...
       'nr', 'nt', 'nh'};
-   mosart = geostructinit('Polygon', numel(links), 'fieldnames', fields);
 
+   % Initialize the structure
+   mslopes = geostructinit('Polygon', numel(links), 'fieldnames', fields);
 
    for n = 1:numel(links)
 
@@ -35,62 +37,44 @@ function mosart = hillsloperToMosart(links, slopes, basins, Data)
       % Get the basin (the merged +/- hillslope)
       hs_info = getslope(basins, hs_ID);
 
-      % Use mergeslopes to get the area-weighted slope and elevation. Also use
-      % this method for earlier versions where the "basins" table is unavailable:
+      % Compute combined area, area-weighted slope and elevation. Also use this
+      % method for earlier versions where the "basins" table is unavailable.
       hs_merged = mergeslopes(slopes, hs_ID);
 
-      % Get the positive and negative slope from "slopes". Not used now that
-      % area-weighted slope and elevation are computed in mergeslopes.
+      % Get the positive and negative slope from "slopes". This method replaced
+      % by area-weighted slope and elevation in mergeslopes.
       % [hs_p, hs_n] = getslope(slopes, hs_ID);
 
       % Pull out the area-weighted slope and elevation
       hslp = hs_merged.hslp;
       helev = hs_merged.helev_m;
-
-      % Get area from the ATS "Data". Note that linear indexing into "Data" is
-      % equivalent to linear indexing into "basins". And this won't work except
-      % for the "final" full-Sag config.
-      idx = Data.Properties.CustomProperties.hs_ID == hs_ID;
-      harea = Data.Properties.CustomProperties.Area(idx);
-      % harea = (hs_p.area_km2 + hs_n.area_km2) * 1e6; % confirm they match
+      harea = hs_merged.harea_m2;
 
       % Can use this to double check
-      % hs_test = mergeslopes(slopes, hs_ID);
       % plotBasinLinks(basins, links, hs_ID); hold on
-      % plot(rmnan([hs_test.Lon]), rmnan([hs_test.Lat]), ':')
+      % plot(rmnan([hs_merged.Lon]), rmnan([hs_merged.Lat]), ':')
 
       % pull out values needed for input file, convert km to m where needed
-      id = links(n).link_ID;
-      lati = nanmean([links(n).Lat]);
-      long = nanmean([links(n).Lon]);
-      dnid = links(n).ds_link_ID;
-      rslp = round(links(n).slope, 4);
-      rlen = round(links(n).len_km * 1e3, 0);
-      hslp = round(hslp, 4);
-      harea = round(harea, 0);
-      helev = round(helev, 0);
-      uarea = hs_info.da;
-      % uarea = round(links(n).us_da_km2 * 1e6, 4);
+      id = links(n).link_ID;                       % -
+      lati = nanmean([links(n).Lat]);              % degN
+      long = nanmean([links(n).Lon]);              % degE
+      dnid = links(n).ds_link_ID;                  % -
+      rslp = round(links(n).slope, 8);             % 1
+      rlen = round(links(n).len_km * 1e3, 0);      % m
+      hslp = round(hslp, 8);                       % 1
+      harea = round(harea, 0);                     % m2
+      helev = round(helev, 0);                     % m
+      uarea = round(hs_info.da, 0);                % m2
 
-      % Deal with the accumulation area threshold in headwater links.
-      if isequaltol(uarea, 625)
-         % Set the upstream drainage area equal to the local hillslope area
-         uarea = harea;
-      else
-         % Add the local hillslope area to the upstream drainage area
-         uarea = uarea + harea;
-      end
+      % These fields are added in computeHillslopeTopo, not used in Sag v2.
+      % hslp = round(double(hs_info.hslp), 4);
+      % harea = round(double(hs_info.harea), 0);
+      % helev = round(double(hs_info.helev), 0);
 
-      % % These fields are added in computeHillslopeTopo, not used in _v2 full Sag.
-      % hslp = round(double(slope_info.hslp), 4);
-      % harea = round(double(slope_info.harea), 0);
-      % helev = round(double(slope_info.helev), 0);
-
-      % % This wasn't in sag_basin version
-      % get the lat/lon of the merged slopes. this is done here rather than
-      % mos_mergeslopes because the projection could change. The poly2cw
-      % thing prevents an extra 90o from being appended to hslat, not sure
-      % why it happens.
+      % This wasn't in sag_basin version
+      % Get lat/lon of the merged slopes. Do this here rather than mergeslopes
+      % because the projection could change. The poly2cw thing prevents an extra
+      % 90o from being appended to hslat, not sure why it happens.
       [xn, yn] = poly2cw(hs_info.X, hs_info.Y);
       [xn, yn] = closePolygonParts(xn, yn);
       [hslt, hsln] = projinv(proj, xn, yn);
@@ -117,42 +101,47 @@ function mosart = hillsloperToMosart(links, slopes, basins, Data)
       rwid0 = 5 * rwid;
 
       % Put the values into a structure
-      mosart(n).Geometry     = hs_info.Geometry;
-      mosart(n).BoundingBox  = hs_info.BoundingBox;
-      mosart(n).X_hs         = hs_info.X;
-      mosart(n).Y_hs         = hs_info.Y;
-      mosart(n).X_link       = links(n).X;
-      mosart(n).Y_link       = links(n).Y;
-      mosart(n).Lat_hs       = hslt;
-      mosart(n).Lon_hs       = hsln;
-      mosart(n).Lat_link     = links(n).Lat;
-      mosart(n).Lon_link     = links(n).Lon;
-      mosart(n).latixy       = lati;
-      mosart(n).longxy       = long;
-      mosart(n).ID           = id;
-      mosart(n).dnID         = dnid;
-      mosart(n).hs_ID        = hs_ID;    % hillslope id, not needed for model
-      mosart(n).fdir         = 4;        % flow direction
-      mosart(n).Lat          = lati;
-      mosart(n).Lon          = long;
-      mosart(n).frac         = 1;        % fraction of cell included in study area
-      mosart(n).rslp         = rslp;     % river slope                     [-]
-      mosart(n).rlen         = rlen;     % main channel length             [m]
-      mosart(n).rdep         = rdep;     % main channel bankfull depth     [m]
-      mosart(n).rwid         = rwid;     % main channel bankfull width     [m]
-      mosart(n).rwid0        = rwid0;    % floodplain width                [m]
-      mosart(n).gxr          = 1;        % dummy, drainage density         [-]
-      mosart(n).hslp         = hslp;     % hillslope slope                 [-]
-      mosart(n).twid         = 2;        % dummy, trib width         [m]
-      mosart(n).tslp         = hslp;     % trib slope                [-]
-      mosart(n).area         = harea;    % hillslope area            [m2]
+      mslopes(n).Geometry     = hs_info.Geometry;
+      mslopes(n).BoundingBox  = hs_info.BoundingBox;
+      mslopes(n).X_hs         = hs_info.X;
+      mslopes(n).Y_hs         = hs_info.Y;
+      mslopes(n).X_link       = links(n).X;
+      mslopes(n).Y_link       = links(n).Y;
+      mslopes(n).Lat_hs       = hslt;
+      mslopes(n).Lon_hs       = hsln;
+      mslopes(n).Lat_link     = links(n).Lat;
+      mslopes(n).Lon_link     = links(n).Lon;
+      mslopes(n).latixy       = lati;
+      mslopes(n).longxy       = long;
+      mslopes(n).ID           = id;
+      mslopes(n).dnID         = dnid;
+      mslopes(n).hs_ID        = hs_ID;    % hillslope id, not needed for model
+      mslopes(n).fdir         = 4;        % flow direction
+      mslopes(n).Lat          = lati;
+      mslopes(n).Lon          = long;
+      mslopes(n).frac         = 1;        % fraction of cell included in study area
+      mslopes(n).rslp         = rslp;     % river slope                     [-]
+      mslopes(n).rlen         = rlen;     % main channel length             [m]
+      mslopes(n).rdep         = rdep;     % main channel bankfull depth     [m]
+      mslopes(n).rwid         = rwid;     % main channel bankfull width     [m]
+      mslopes(n).rwid0        = rwid0;    % floodplain width                [m]
+      mslopes(n).gxr          = 1;        % dummy, drainage density         [-]
+      mslopes(n).hslp         = hslp;     % hillslope slope                 [-]
+      mslopes(n).twid         = 2;        % dummy, trib width               [m]
+      mslopes(n).tslp         = hslp;     % trib slope                      [-]
+      mslopes(n).area         = harea;    % hillslope area                  [m2]
       % mosart(n).areaTotal0   = uarea;    % upstream
       % mosart(n).areaTotal    = uarea;    % upstream drainage area    [m2]
       % mosart(n).areaTotal2   = uarea;    % 'computed' upstream d.a.  [m2]
-      mosart(n).nr           = 0.05;     % manning's, river
-      mosart(n).nt           = 0.05;     % manning's, trib
-      mosart(n).nh           = 0.075;    % manning's, hillslope
+      mslopes(n).nr           = 0.05;     % manning's, river
+      mslopes(n).nt           = 0.05;     % manning's, trib
+      mslopes(n).nh           = 0.075;    % manning's, hillslope
    end
+
+   % QA/QC checks
+   mslopes = struct2table(mslopes);
+   mslopes.rslp = max(min(mslopes.rslp(mslopes.rslp > 0)), mslopes.rslp);
+   mslopes.hslp = max(min(mslopes.hslp(mslopes.hslp > 0)), mslopes.hslp);
 end
 
 %{

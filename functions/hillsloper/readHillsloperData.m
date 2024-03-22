@@ -162,7 +162,7 @@ function data = updateCoordinateFields(data, structname)
    end
 
    % Add scalar x/y and lat/lon fields for easier plotting (e.g., attributes)
-   if strcmp(structname, {'links', 'slopes', 'basins'})
+   if ismember(structname, {'links', 'slopes', 'basins'})
 
       for m = 1:numel(data)
 

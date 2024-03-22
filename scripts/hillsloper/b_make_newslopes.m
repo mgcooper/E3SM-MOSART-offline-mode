@@ -17,34 +17,25 @@ opts = const( ...
 debug = false; % to control the random stuff at the end
 
 %% Set paths
-
 sitename = getenv('USER_MOSART_DOMAIN_NAME');
 pathdata = getenv('USER_MOSART_DOMAIN_DATA_PATH');
 pathsave = getenv('USER_MOSART_DOMAIN_DATA_PATH');
 
-%% Read in the data
-
-% Read in the hillsloper data
+%% Read in the hillsloper data
 [basins, slopes, links, nodes, boundary] = readHillsloperData(sitename, ...
    ["basins", "slopes", "links", "nodes", "boundary"]);
-
-% Read in the ATS data
-filepath = '/Users/coop558/work/data/interface/ATS/sag_basin';
-filename = fullfile(filepath, 'sag_hillslope_discharge.mat');
-load(filename, "Data")
 
 %% Plot the hillslopes
 
 % Probably very slow with full Sag basin
 if opts.plot_slopes
    mapslopes(basins, links, nodes, boundary, 'worldmap')
-
    % plothillsloper(slopes, links); % inletID, outletID mapslopes is faster
 end
 
-% Compute topo. This is only here b/c it's the only item from a_save_hillsloper
-% that was not here. This is not needed with latest full Sag config, it is
-% needed for prior versions that did not have elevation and/or slope.
+% Compute topo. This is the only item from a_save_hillsloper that was not here.
+% This is not needed with latest full Sag config, it is needed for prior
+% versions that did not have elevation and/or slope.
 % slopes = computeHillslopeTopo(slopes, ftopo);
 
 % Check for bad hillslope topology
@@ -77,24 +68,26 @@ rm_flag = true;         % if true, remove the slope that drains to rm_link
 % Do an upstream walk from the link below the bad link
 % plotlinks(links, 2661, [rp_link us_link]);
 
-% Check again
-newinfo = verifyTopology(slopes, links, basins, 'hs_ID', true);
+%% Fix basins, do this after findDownstreamLinks
 
 % Remove the bad hillslope 427 from basins. Note - this cannot be automated.
 basins(427) = [];
 
-% Identify the outlet link
+% Fix incorrect basin areas at endbasins with downstream confluences
+basins = hillsloper.fixda(basins, links, nodes);
+
+%% Check topology again
+newinfo = verifyTopology(slopes, links, basins, 'hs_ID', true);
+
+% Confirm the outlet link can be identified
 outlet = getOutletFeatures(slopes, links, nodes, ...
    'plot', false, 'basin', boundary);
 
-% This shows that the bad node is no longer in the links
+% Confirm that the bad node is no longer in the links
 links(ismember([links.us_node_ID], rm_node_ID)).link_ID
 links(ismember([links.ds_node_ID], rm_node_ID)).link_ID
 
 %% make newslopes
-
-% Add an hs_ID field to the ATS "Data" table
-Data = settableprops(Data, "hs_ID", "table", {[basins.hs_ID]});
 
 % TODO: figure out if this is needed and if makenewslopes is needed at all
 % and/or can be merged into makenewslopes.
@@ -106,13 +99,16 @@ Data = settableprops(Data, "hs_ID", "table", {[basins.hs_ID]});
 % % test rebuilding links to see if the numbering is correct
 % [links, inletID, outletID] = findDownstreamLinks(links, nodes);
 
-%%
-
-test = hillsloper.fixda(basins, links, nodes);
-
 %% Build a table with the MOSART input file information
 
-mosartslopes = mosart.hillsloperToMosart(links, slopes, basins, Data);
+% PICK UP HERE - now the upstream area should be correct, so fix the hydraulic
+% geometry, build a new mosart file, run a new sim to test the various changes
+% such as not using nele, areaTotal, etc., also confirm the water balance using
+% the change in storage, then return to the issue of selecting the usgs link and
+% similarly the toniolos, fix up the sag_data struct, the weird subbasin offset
+% thing, and hand the data over to Bo
+
+mosartslopes = mosart.hillsloperToMosart(links, slopes, basins);
 
 % h = mos_plotslopes(mosartslopes,slopes,nodes);
 
@@ -130,75 +126,37 @@ end
 
 if debug == true
 
-   %% Check the min,max width and depth
+   % Check the min,max width and depth
 
-   % Depth: 0.75 - 16.3 m
+   % Depth: 0.75 - 6.67 m (previously 16.3 m)
    [min([mosartslopes.rdep]) max([mosartslopes.rdep])]
 
-   % Width: 1.6 - 5498 m
+   % Width: 1.6 - 525 m (previously 5498 m)
+   % The 5x floodplain width gives 2625 m. Toniolo reports 3600 m at DSS5.
    [min([mosartslopes.rwid]) max([mosartslopes.rwid])]
 
-   % Note: although 5500 m is quite large (18000 ft), the engineering report that
-   % developed the relations report up to 8000 ft bankful width for the Colville
-   % river gage, and the gage likely is not the widest point.
+   % Note: although 5500 m is quite large (18000 ft), the engineering report
+   % that developed the relations report up to 8000 ft bankful width for the
+   % Colville river gage, and the gage likely is not the widest point.
 
    % Slopes seem a bit high but need to investigate further
+   [min([mosartslopes.rslp]) max([mosartslopes.rslp])]
    % figure; histogram([mosartslopes.rslp])
 
+   figure
+   plot([links.slope], [mosartslopes.hslp], 'o')
+   formatPlotMarkers
+   addOnetoOne
 
+   for n = 1:numel(links)
+      hs_ID = links(n).hs_ID;
+
+   end
 
    % Load the data:
    % pathsave = getenv('USER_MOSART_DOMAIN_DATA_PATH');
    % load(fullfile(pathsave, 'mosart_hillslopes'),'mosartslopes','links','slopes');
    % [basins, nodes, boundary] = readHillsloperData(sitename, 'basins', 'nodes', 'boundary');
-
-
-   %% Confirm us_da is correct
-
-   figure
-   scatter([links.link_X], [links.link_Y], 40, [links.us_da_km2] * 1e6, 'filled')
-   colorbar
-
-   % This shows basins.da is probably the hillslope drainage area
-   % figure
-   % scatter(link_x, link_y, 40, [basins.da], 'filled')
-   % colorbar
-
-   % This suggests slopes.hs_ID, links.hs_ID, and basins.hs_ID are
-
-   %% Confirm basin area is correct
-
-   % The important thing is confirming that "Data" (the ATS data) is ordered the
-   % same as the "basins" - after removing 427. Note that "Data" does not
-   % contain hs427, thus the linear indexing (columns) go from hs426 in column
-   % 426 to hs428 in column 427, just like basins(426).hs_ID and
-   % basins(427).hs_ID, so that tells us already the two datasets are ordered
-   % the same. The checks below are to be doubly sure and to confirm the area's
-   % match.
-
-   % Jan 2024 - compare with Bo's data. Sort links drainage area by hs_ID.
-   basins_da = [basins.area_km2] * 1e6;
-   ats_da = Data.Properties.CustomProperties.Area;
-
-   figure
-   scatter(ats_da, basins_da)
-   addOnetoOne
-
-   diffs = ats_da - basins_da;
-
-   [~, md] = findglobalmax(abs(ats_da - basins_da) ./ basins_da);
-
-   % Histogram percent differences - Basins da is always larger than ats.
-   figure; histogram(100 * (ats_da - basins_da) ./ basins_da)
-   figure; histogram(100 * (basins_da - ats_da) ./ basins_da) % Reverse the order
-
-   % The differences might be due to the water fraction
-   figure
-   histogram(100 * Data.Properties.CustomProperties.WaterFrac)
-   xlim([0 10])
-
-   diffs = Data.Properties.CustomProperties.Area + - basins_da;
-   [~, md] = findglobalmax(abs(diffs) ./ basins_da);
 
    %% conpare
 
