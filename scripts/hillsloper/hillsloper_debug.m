@@ -156,9 +156,6 @@ function debug_upstream_area
    load(fullfile(getenv('USERDATAPATH'), ...
       'interface', 'ATS', 'sag_basin', 'sag_hillslope_discharge.mat'), 'Data');
    Area = Data.Properties.CustomProperties.Area;
-   Time = Data.Time;
-   Runoff = sum(Data{:, :}, 2) / (24 * 3600); % m3/d -> m3/s
-   clear Data
 
    mosart_data = config_data.mosart;
    domain_data = config_data.domain;
@@ -187,15 +184,17 @@ function debug_upstream_area
    % input ats Area used to convert runoff from m3/d to mm/s, so something else,
    % such as channel storage, must explain the difference.
    %
-   % I know: - The "harea" field in the mosart input file was assigned directly
-   % from the ats Area data in makeMosartSlopes - The "mosart area" in the
-   % rof.log file matches sum(Area) - This means the mosart area was computed
-   % from the harea field - The "uarea" field, which is
-   % round(links(n).us_da_km2, is wrong. This upstream area is assigned to
-   % areaTotal, areaTotal0, and areaTotal2, which Tian thought aren't used in
-   % the model. - This is consistent with the fact that "mosart area" in rof.log
-   % matches the sum over harea, and overall this suggests there is no problem
-   % related to area
+   % I know:
+   % - The "harea" field in the mosart input file was assigned directly
+   % from the ats Area data in makeMosartSlopes
+   % - The "mosart area" in the rof.log file matches sum(Area)
+   % - This means the mosart area was computed from the harea field
+   % - The "uarea" field, which is round(links(n).us_da_km2, is wrong. This
+   % upstream area is assigned to areaTotal, areaTotal0, and areaTotal2, which
+   % Tian thought aren't used in the model.
+   % - This is consistent with the fact that "mosart area" in rof.log matches
+   % the sum over harea, and overall this suggests there is no problem related
+   % to area
 
 
    % These ones match the known area exactly
@@ -305,70 +304,6 @@ function debug_upstream_area
    % This one is:
    min([links.us_da_km2])
    min([nodes.da_km2])
-end
-
-function verify_runoff_balances_discharge
-
-   % Load the saved mosart discharge
-   pathsave = fullfile(getenv('E3SMOUTPUTPATH'), getenv('MOSART_RUNID'), 'mat');
-   fname = fullfile(pathsave, 'mosart.mat');
-   load(fname, 'mosart');
-
-   % Clip 2014-2018
-   idx = isbetween(mosart.T, Time(1), Time(end));
-   Discharge = mosart.D(idx, :);
-   Storage = mosart.S(idx, :);
-
-   % Confirm the outlet has the max cumulative discharge
-   test = cumsum(Discharge);
-   assertEqual(findglobalmax(Discharge(1, :)), mosart.outID)
-
-   % Compare the outlet cumulative discharge to the cumulative input runoff
-   Discharge = Discharge(:, mosart.outID); % m3/s
-
-   figure; hold on
-   plot(Discharge)
-   plot(Runoff)
-
-   figure
-   scatterfit(Discharge, Runoff)
-
-   % Based on this, I think it might just be the channel storage
-   figure; hold on
-   plot(cumsum(Discharge)); plot(cumsum(Runoff))
-   legend('D', 'R')
-
-   Dcumulative = cumsum(Discharge);
-   Rcumulative = cumsum(Runoff);
-   Rcumulative(end) - Dcumulative(end)
-
-   % Convert the storage on the final day to m3/s
-   sum(Storage(end, :)) / 3600
-
-   % figure; hold on plot(cumsum(Discharge) + sum(Storage, 2) / 3600);
-   % plot(cumsum(Runoff)) legend('D', 'R')
-
-
-   %%
-   t1 = datetime(2014, 1, 1, 0, 0, 0);
-   t2 = datetime(2015, 1, 1, 0, 0, 0);
-   idx = isbetween(Time, t1, t2, 'openright');
-
-   figure; hold on
-   plot(Time(idx), cumsum(Runoff(idx)))
-
-
-   %%
-
-   % The domain file is not used, the dlnd file sets the runoff file as the
-   % domain, SO ITS POSSIBLE THE PROBLEM IS THAT THE MING PAN RUNOFF FILES ARE
-   % USED AS TEMPLATES AND THEY HAVE THE WRONG AREA ... but the runoff files
-   % don't have an area field ... so that's not the problem ...
-   %
-   % runoff_data.info.Name
-
-   % Since the problem is not likely to be the area
-
 end
 
 function plot_endbasins
