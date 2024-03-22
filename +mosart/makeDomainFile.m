@@ -1,11 +1,11 @@
-function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, opts)
+function [schema, info, data] = makeDomainFile(slopes, ftemplate, fsave, opts)
    %MAKEDOMAINFILE Make MOSART domain file
    %
    %  [SCHEMA, INFO, DATA] = MAKEDOMAINFILE(SLOPES, FTEMPLATE, FSAVE, OPTS)
    %
    % Inputs
    %
-   %     'slopes' : a structure with the following fields:
+   %     'slopes' : a table or struct with the following fields:
    %     longxy   : latitude of computational unit, scalar
    %     latixy   : longitude of computational unit, scalar
    %     area     : area in m2
@@ -18,40 +18,49 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, o
    %
    % See also
 
-   % these are the variables created by this function:
+   % Cast geostruct to table.
+   if isstruct(slopes)
+      try
+         slopes = struct2table(slopes);
+      catch e
+         rethrow(e) % throw for now
+      end
+   end
+
+   % These are the variables created by this function:
    %vars = {'xc','yc','xv','yv','mask','area','frac'};
    vars = {'xc','yc','mask','area','frac'};
 
-   % number of hillslope units in the domain
+   % Number of hillslope units in the domain
    ncells = numel(slopes);
 
-   % to compute the surface area of each sub-basin in units of steradians
+   % Define the earth surface area to compute subbasin areas in steradians
    Aearth = 510099699070762; % m2, this is earth area defined in E3SM
-   % Aearth  = 510065621724089;     % this is the area i used previously
+   % Aearth  = 510065621724089; % this is the area i used previously
 
-   % assign values to each variable
-   data.xc = wrapTo360([slopes.longxy]');
-   data.yc = [slopes.latixy]';
-   data.mask = int32(ones(ncells,1));
-   data.frac = double(ones(ncells,1));
-   data.area = ([slopes.area] * 4 * pi / Aearth)'; % steradians
+   % Assign values to each variable, arranged as row vectors
+   data.xc = wrapTo360(slopes.longxy(:)');
+   data.yc = slopes.latixy(:)';
+   data.mask = int32(ones(1, ncells));
+   data.frac = double(ones(1, ncells));
+   data.area = (slopes.area(:)' * 4 * pi / Aearth); % steradians
 
-   % compute the bounding box of each sub-basin
-   data.xv = nan(4,ncells);                    % x vertices
-   data.yv = nan(4,ncells);                    % y vertices
+   % Compute bounding box vertices for each subbasin
+   data.xv = nan(4, ncells);
+   data.yv = nan(4, ncells);
 
    % should be as simple as this:
    % slopes = updateBoundingBox(slopes,'Lon_hs','Lat_hs');
 
-   for n = 1:length(slopes)
+   for n = 1:ncells
 
       % if the bounding box is already provided, use it
-      if isfield(slopes,'BoundingBox')
+      if isvariable('BoundingBox', slopes)
 
-         xb = slopes(n).BoundingBox(:,1);
-         yb = slopes(n).BoundingBox(:,2);
+         xb = slopes.BoundingBox{n}(:, 1);
+         yb = slopes.BoundingBox{n}(:, 2);
 
-         if islatlon(yb(1),xb(1))
+         if islatlon(yb(1), xb(1))
 
             % we're done, could assign the data and continue, but instead check
             % if the bbox can be computed in lat/lon from the provided data
@@ -59,26 +68,42 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, o
          else % compute the bounding box in lat/lon
 
             % use geoquadpt if lat/lon fields are provided in the domain data
-            if isfield(slopes,'Lat_hs')
+            if isvariable('Lat_hs', slopes)
                try
-                  [yb,xb] = geoquadpt([slopes(n).Lat_hs],[slopes(n).Lon_hs]);
+                  [yb, xb] = geoquadpt(slopes.Lat_hs{n}, slopes.Lon_hs{n});
 
                   % do this later so it applies to the other cases
                   % xb = wrapTo360(xb);
 
-               catch ME % the mapping tbx is not available
-                  if strcmp(ME.identifier,'MATLAB:license:checkouterror')
-                     slopes = updateBoundingBox(slopes,'Lon_hs','Lat_hs');
-                     xb = slopes(n).BoundingBox(:,1);
-                     yb = slopes(n).BoundingBox(:,2);
+               catch e
+                  switch e.identifier
+
+                     case 'MATLAB:cellRefFromNonCell' % Lat_hs is scalar
+                        warning('Supply Lat_hs, Lon_hs or BoundingBox')
+                        rethrow(e)
+
+                     case 'MATLAB:license:checkouterror' % mapping tbx
+                        slopes = updateBoundingBox(slopes, 'Lon_hs', 'Lat_hs');
+                        xb = slopes.BoundingBox{n}(: ,1);
+                        yb = slopes.BoundingBox{n}(: ,2);
+
+                     otherwise
+                        rethrow(e)
                   end
                end
-
             else
 
                % Compute the bbox of the hillslope in cartesian coordinates
-               x = slopes(n).X_hs;
-               y = slopes(n).Y_hs;
+               try
+                  x = slopes.X_hs{n};
+                  y = slopes.Y_hs{n};
+               catch e
+                  if strcmp(e.identifier, 'MATLAB:cellRefFromNonCell')
+                     % X_hs / Y_hs are scalar. Note - the bbox is not needed
+                     % for hillslope config, but for generality keep this
+                  end
+                  rethrow(e)
+               end
 
                %----------------------------------------------------------------
                % BELOW HERE NOT SURE WHY I CONVERTED TO X/Y FIRST TO GET BBOX
@@ -86,14 +111,14 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, o
                % LAT/LON ... the issue is if the data doesn't have lat/lon, then
                % I need to know the projection and convert to lat/lon.
 
-               if ~islatlon(y(1),x(1))
+               if ~islatlon(y(1), x(1))
                   % need the projection
                   error('no lat/lon data found')
                end
 
                % this is sufficient to compute the bounding box
-               [xb(1),xb(2)] = bounds(x);
-               [yb(2),yb(2)] = bounds(y);
+               [xb(1), xb(2)] = bounds(x);
+               [yb(2), yb(2)] = bounds(y);
 
                %----------------------------------------------------------------
 
@@ -116,12 +141,12 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, o
       end
 
       % shouldn't be possible, but double check that the data is lat/lon.
-      if islatlon(yb(1),xb(1))
+      if islatlon(yb(1), xb(1))
 
          xb = wrapTo360(xb);
 
-         data.xv(:,n) = [xb(1) xb(2) xb(2) xb(1)];
-         data.yv(:,n) = [yb(1) yb(1) yb(2) yb(2)];
+         data.xv(:, n) = [xb(1) xb(2) xb(2) xb(1)];
+         data.yv(:, n) = [yb(1) yb(1) yb(2) yb(2)];
       else
          error('something went wrong')
       end
@@ -129,17 +154,17 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, o
 
    % use the template file to get the schema
    for n = 1:numel(vars)
-      schema.(vars{n}) = ncinfo(ftemplate,vars{n});
+      schema.(vars{n}) = ncinfo(ftemplate, vars{n});
    end
 
    % modify the size information to match the new domain
-   schema.xc.Size    = [ncells,1];
-   schema.yc.Size    = [ncells,1];
-   schema.xv.Size    = [4,ncells,1];
-   schema.yv.Size    = [4,ncells,1];
-   schema.mask.Size  = [ncells,1];
-   schema.area.Size  = [ncells,1];
-   schema.frac.Size  = [ncells,1];
+   schema.xc.Size    = [ncells, 1];
+   schema.yc.Size    = [ncells, 1];
+   schema.xv.Size    = [4, ncells, 1];
+   schema.yv.Size    = [4, ncells, 1];
+   schema.mask.Size  = [ncells, 1];
+   schema.area.Size  = [ncells, 1];
+   schema.frac.Size  = [ncells, 1];
 
    schema.xc.Dimensions(1).Length    = ncells;
    schema.yc.Dimensions(1).Length    = ncells;
@@ -158,8 +183,8 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, o
       end
 
       for n = 1:numel(vars)
-         ncwriteschema(fsave,schema.(vars{n}));
-         ncwrite(fsave,vars{n},data.(vars{n}));
+         ncwriteschema(fsave, schema.(vars{n}));
+         ncwrite(fsave, vars{n}, data.(vars{n}));
       end
 
       % read in the new file to compare with the old file

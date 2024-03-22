@@ -6,7 +6,7 @@ sitename = 'sag_basin';
 % areafile = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
 
 runID = 'sag_basin';
-areafile = 'huc0802_gauge15906000_nopf_subcatch_area.csv';
+areafile = 'huc0802_gauge15906000_nopf_subcatch_area.csv'; % optional
 
 %% set the options
 
@@ -53,7 +53,8 @@ fname_save = ...
 
 %% load the hillsloper data that has ID and dnID and prep it for MOSART
 
-load(fullfile(path_domain_data,'mosart_hillslopes.mat'),'mosartslopes');
+hillslopes = load( ...
+   fullfile(path_domain_data,'mosart_hillslopes.mat')).('mosartslopes');
 
 %% renumber ID -> dnID starting with 1
 
@@ -73,43 +74,34 @@ load(fullfile(path_domain_data,'mosart_hillslopes.mat'),'mosartslopes');
 % end
 
 % For full Sag config, the numbering begins at 0 but then skips 1391
-ID = [mosartslopes.ID];
-dnID = [mosartslopes.dnID];
+ID = [hillslopes.ID];
+dnID = [hillslopes.dnID];
 
 ID(1:1391) = ID(1:1391) + 1;
 dnID(dnID <= 1390) = dnID(dnID <= 1390) + 1;
 
-for n = 1:numel(ID)
-   mosartslopes(n).ID = ID(n);
-   mosartslopes(n).dnID = dnID(n);
-end
-
+hillslopes.ID = ID;
+hillslopes.dnID = dnID;
 
 %% put the updated ats area into the mosart fields
 
 if opts.custom_area
    % the ats hillslopes are ordered by hillsloper hs_id, but mosartslopes are
    % ordered by 1:numel(links). the links.hs_id field maps between them.
-   A = combineHillslopeArea(fname_area_file, transpose([mosartslopes.hs_id]));
+   A = combineHillslopeArea(fname_area_file, transpose(hillslopes.hs_id));
 
    % run this before replacing to see that the ordering is correct
    % figure; scatterfit(A, [mosartslopes.area])
 
    % replace the mosartslopes area field with the updated one
-   mosartslopes = addstructfields(mosartslopes,A,'newfieldnames','area');
+   hillslopes.area = A;
 end
 
 %% write the file
 
-% Back up the existing file
-if isfile(fname_save)
-   fname_bk = backupfile(fname_save);
-   copyfile(fname_save, fname_bk);
-end
-
-% Create the file
+% Create the file. Note a backup is made if opts.nobackups = false.
 [schema, info, data] = mosart.makeMosartFile( ...
-   mosartslopes, fname_template, fname_save, opts);
+   hillslopes, fname_template, fname_save, opts);
 cd(path_mosart_file_save)
 
 % for template files see sftp://compy.pnl.gov/compyfs/inputdata/rof/mosart/

@@ -106,8 +106,8 @@ runoff = cell(numel(filelist), 1);
 flags = cell(numel(filelist), 1);
 tspan = NaT(numel(filelist), 2);
 for n = 1:numel(filelist)
-   
-   % Get the filename, the sitename from the filename, 
+
+   % Get the filename, the sitename from the filename,
    % and remove the sitename column from the table.
    thisfile = filelist(n);
    [~, thisname] = fileparts(thisfile);
@@ -115,19 +115,19 @@ for n = 1:numel(filelist)
    thisname = thisname(1:4);
    thisdata = readtimetable(thisfile);
    thisdata = removevars(thisdata, "StationID");
-   
+
    % Get the timespan of this data
    tspan(n, :) = timespan(thisdata);
-   
+
    % Separate the table into discharge and flags
    flags{n} = removevars(thisdata, "Discharge_m3_s_");
    thisdata = removevars(thisdata, "DischargeFlag");
    thisdata = renamevars(thisdata, "Discharge_m3_s_", thisname);
-   
+
    % Flags 7777, 6999 exist in the Discharge column, not DischargeFlag
    thisdata{thisdata.(thisname) == 7777, :} = NaN;
    thisdata{thisdata.(thisname) == 6999, :} = NaN;
-   
+
    runoff{n} = thisdata;
 end
 
@@ -162,10 +162,10 @@ Flags.Ice = "ice affected stage";
 Flags.EST = "Estimated";
 Flags.M = "Measured";
 
-% Ice-Ice affected stage, 
-% EST-Estimated, 
-% M-Measured, 
-% 7777-data not collected, 
+% Ice-Ice affected stage,
+% EST-Estimated,
+% M-Measured,
+% 7777-data not collected,
 % 6999-bad/missing
 
 %% Plots
@@ -188,7 +188,7 @@ if savedata == true
    filename = fullfile(getenv('USERDATAPATH'), 'interface', 'sag_basin', ...
       'sag_toniolo_discharge.mat');
    save(filename, 'Data')
-   
+
    % Save a shapefile
    filename = fullfile(getenv('USERGISPATH'), 'sag_toniolo_sites.shp');
 

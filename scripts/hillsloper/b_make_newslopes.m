@@ -103,9 +103,9 @@ links(ismember([links.ds_node_ID], rm_node_ID)).link_ID
 
 % PICK UP HERE - now the upstream area should be correct, so
 % - DONE fix the hydraulic geometry
-% - build a new mosart file
-% - run a new sim to test not using nele, areaTotal, etc.,
-% - confirm the water balance using the change in storage
+% - DONE build a new mosart file
+% - DONE run a new sim to test not using nele, areaTotal, etc.,
+% - DONE (didn't work) confirm the water balance using the change in storage
 % - then return to selecting the usgs link and similarly the toniolo sites
 % - fix up the sag_data struct,
 % - fix the spatial offset thing
