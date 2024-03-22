@@ -1,28 +1,38 @@
-function H = plotatsmosart(mosart, opts)
+function H = plotatsmosart(mosartData, opts)
    %PLOTATSMOSART Plot to compare ATS runoff and MOSART discharge
 
    arguments
-      mosart = [] % the output of mosart.readoutput
+      mosartData = [] % the output of mosart.readoutput
       opts.plot_ming_pan = false
    end
 
-   if isempty(mosart)
-      pathdata = fullfile( ...
-         getenv('E3SMOUTPUTPATH'), getenv('MOSART_RUNID'), 'mat');
-      load(fullfile(pathdata, 'mosart.mat'), 'mosart');
+   if isempty(mosartData)
+      mosartData = mosart.loadoutput(); % uses environment variable MOSART_RUNID
    end
 
    colors = defaultcolors;
 
    % for plotting
-   Tavg = mosart.gaged.Tavg;
-   T = mosart.gaged.Tmod;
+   Tavg = mosartData.gaged.Tavg;
+   T = mosartData.gaged.Tmod;
 
    % Compute nse
-   nse1 = nashsutcliffe(mosart.gaged.Dobs_avg, mosart.gaged.Dmod_avg);
-   rmse1 = sqrt(mean( (mosart.gaged.Dobs_avg - mosart.gaged.Dmod_avg) .^2 ));
-   nse2 = nashsutcliffe(mosart.gaged.Dobs, mosart.gaged.Dmod);
-   rmse2 = sqrt(mean( (mosart.gaged.Dobs - mosart.gaged.Dmod) .^2 ));
+   nse1 = nashsutcliffe(mosartData.gaged.Dobs_avg, mosartData.gaged.Dmod_avg);
+   rmse1 = sqrt(mean( (mosartData.gaged.Dobs_avg - mosartData.gaged.Dmod_avg) .^2 ));
+   nse2 = nashsutcliffe(mosartData.gaged.Dobs, mosartData.gaged.Dmod);
+   rmse2 = sqrt(mean( (mosartData.gaged.Dobs - mosartData.gaged.Dmod) .^2 ));
+
+
+   % This is here b/c I accidentally plotted the ats runoff and the mosart
+   % routed discharge and thought wow the fit is so good, there must be a
+   % mistake in plotatsmosart, but i kept this anyway b/c it does verify that
+   % whatever happens in mosart.readoutput (which creates the "gaged"
+   % sub-struct) is correct.
+   % figure; hold on
+   % plot(mosartData.T, mosartData.D(:, mosartData.outID));
+   % plot(mosartData.T, mosartData.gaged.Dmod);
+   % plot(mosartData.T, mosartData.gaged.Dobs, ':');
+
 
    % set colors
    c_mosart = colors(7, :); % colors(1, :)
@@ -30,9 +40,9 @@ function H = plotatsmosart(mosart, opts)
 
    % plot the ATS data
    H.f1 = figure;
-   plot(mosart.gaged.Tavg, mosart.gaged.Dobs_avg, ...
+   plot(mosartData.gaged.Tavg, mosartData.gaged.Dobs_avg, ...
       'Color', c_usgs, 'LineWidth', 1.5); hold on
-   plot(mosart.gaged.Tavg, mosart.gaged.Dmod_avg, ...
+   plot(mosartData.gaged.Tavg, mosartData.gaged.Dmod_avg, ...
       'Color', c_mosart, 'LineWidth', 1.5);
    legend('USGS gage', 'ATS-MOSART');
    datetick;
@@ -42,8 +52,8 @@ function H = plotatsmosart(mosart, opts)
 
 
    H.f2 = figure; hold on
-   h(1) = plot(T, mosart.gaged.Dmod, 'Color', c_mosart, 'LineWidth', 1.5);
-   h(2) = plot(T, mosart.gaged.Dobs, 'Color', c_usgs, 'LineWidth', 1.5);
+   h(1) = plot(T, mosartData.gaged.Dmod, 'Color', c_mosart, 'LineWidth', 1.5);
+   h(2) = plot(T, mosartData.gaged.Dobs, 'Color', c_usgs, 'LineWidth', 1.5);
    legend([h(2) h(1)], 'USGS gage', 'ATS-MOSART', 'location', 'north');
    datetick;
    ylabel('Daily Discharge [m^3 s^{-1}]', 'Interpreter', 'tex');
@@ -55,7 +65,7 @@ function H = plotatsmosart(mosart, opts)
 
 
    try
-      h = scatterfit(mosart.gaged.Dobs, mosart.gaged.Dmod);
+      h = scatterfit(mosartData.gaged.Dobs, mosartData.gaged.Dmod);
       xylabel('USGS gage', 'ATS-MOSART')
       addOnetoOne
       legend('data', 'linear fit', '1:1', 'location', 'eastoutside')
@@ -67,7 +77,7 @@ function H = plotatsmosart(mosart, opts)
    end
 
    try
-      h = scatterfit(mosart.gaged.Dobs_avg, mosart.gaged.Dmod_avg);
+      h = scatterfit(mosartData.gaged.Dobs_avg, mosartData.gaged.Dmod_avg);
       xylabel('USGS gage', 'ATS-MOSART')
       addOnetoOne
       legend('data', 'linear fit', '1:1', 'location', 'eastoutside')
@@ -89,16 +99,16 @@ function H = plotatsmosart(mosart, opts)
 
       % plot the ATS data
       H.f1 = figure; hold on
-      plot(mosart.gaged.Tavg, mosart.gaged.Dobs_avg);
-      plot(mosart.gaged.Tavg, mosart.gaged.Dmod_avg);
-      plot(mosart.gaged.Tavg, mosart.gaged.Dpan_avg);
+      plot(mosartData.gaged.Tavg, mosartData.gaged.Dobs_avg);
+      plot(mosartData.gaged.Tavg, mosartData.gaged.Dmod_avg);
+      plot(mosartData.gaged.Tavg, mosartData.gaged.Dpan_avg);
       legend('USGS gage', 'ATS-MOSART', 'VIC-RAPID'); datetick;
       ylabel('m^3/s','Interpreter','tex');
 
       H.f2 = figure; hold on
-      plot(T, mosart.gaged.Dobs);
-      plot(T, mosart.gaged.Dmod);
-      plot(T, mosart.gaged.Dpan);
+      plot(T, mosartData.gaged.Dobs);
+      plot(T, mosartData.gaged.Dmod);
+      plot(T, mosartData.gaged.Dpan);
       legend('USGS gage', 'ATS-MOSART', 'VIC-RAPID'); datetick;
       ylabel('Daily Discharge [m$^3$s$^{-1}$]');
       % title('daily flow, 1983-2008'); datetick
@@ -107,14 +117,14 @@ function H = plotatsmosart(mosart, opts)
 
       % plot the GRFR data
       figure; hold on
-      plot(Tavg, mosart.gaged.Dobs_avg);
-      plot(Tavg, mosart.gaged.Dmod_avg);
+      plot(Tavg, mosartData.gaged.Dobs_avg);
+      plot(Tavg, mosartData.gaged.Dmod_avg);
       legend('USGS gage','GRFR-MOSART'); datetick;
       ylabel('m^3/s','Interpreter','tex');
 
       figure; hold on
-      plot(Tavg, cumsum(mosart.gaged.Dobs_avg));
-      plot(Tavg, cumsum(mosart.gaged.Dmod_avg));
+      plot(Tavg, cumsum(mosartData.gaged.Dobs_avg));
+      plot(Tavg, cumsum(mosartData.gaged.Dmod_avg));
       legend('USGS gage','GRFR-MOSART'); datetick;
       ylabel('m^3/s','Interpreter','tex');
 

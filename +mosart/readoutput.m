@@ -1,14 +1,14 @@
-function mosart = readoutput(pathdata, varargin)
+function mosartData = readoutput(pathdata, varargin)
    %READOUTPUT Read mosart .nc files and return the outlet discharge in m3/s
    %
-   %  MOSART = READOUTPUT(PATHDATA) returns the RIVER_DISCHARGE_OVER_LAND_LIQ
+   %  DATA = READOUTPUT(PATHDATA) returns the RIVER_DISCHARGE_OVER_LAND_LIQ
    %  data in the mosart nc output files in pathdata, assumed to be annual
    %  files.
    %
-   %  MOSART = READOUTPUT(PATHDATA, VAR) returns the data for variable VAR in
+   %  DATA = READOUTPUT(PATHDATA, VAR) returns the data for variable VAR in
    %  the in the nc mosart output files in pathdata.
    %
-   %  MOSART = READOUTPUT(_, 'monthly') returns the data for variable VAR
+   %  DATA = READOUTPUT(_, 'monthly') returns the data for variable VAR
    %  in the in the nc mosart output files in pathdata.
    %
    % See also
@@ -194,20 +194,20 @@ function mosart = readoutput(pathdata, varargin)
    end
 
    % package output
-   mosart.data     = data;
-   mosart.D        = D;
-   mosart.T        = T;
-   mosart.Davg     = Davg;
-   mosart.Dstd     = Dstd;
-   mosart.info     = fileinfo;
-   mosart.lat      = lat;
-   mosart.lon      = lon;
-   mosart.x        = x;
-   mosart.y        = y;
-   mosart.outID    = outID;
-   mosart.units    = 'm3 s-1';
-   mosart.S        = S;
-   mosart.S_units  = 'm3';
+   mosartData.data     = data;
+   mosartData.D        = D;
+   mosartData.T        = T;
+   mosartData.Davg     = Davg;
+   mosartData.Dstd     = Dstd;
+   mosartData.info     = fileinfo;
+   mosartData.lat      = lat;
+   mosartData.lon      = lon;
+   mosartData.x        = x;
+   mosartData.y        = y;
+   mosartData.outID    = outID;
+   mosartData.units    = 'm3 s-1';
+   mosartData.S        = S;
+   mosartData.S_units  = 'm3';
 
    % Qmodavg = mean(reshape(Dmod,365,nyrs),2);
    % Tavg = datenum(Tobs(1:365));
