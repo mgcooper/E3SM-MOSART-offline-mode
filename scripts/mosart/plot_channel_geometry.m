@@ -6,7 +6,7 @@ depth = [sag.tiles_hs.rdep];
 harea = [sag.tiles_hs.areaTotal] / 1e6;
 
 figure('Position', [212   113   833   386])
-TL = tiledlayout(1, 2); 
+TL = tiledlayout(1, 2);
 
 nexttile
 plot(harea, width, 'o')
@@ -36,7 +36,7 @@ title('Sag River Hydraulic Geometry')
 exportgraphics(gcf, 'width_depth.png')
 
 
-%% this was in b_make_newslopes 
+%% this was in b_make_newslopes
 
 % Quick plot of channel width
 
