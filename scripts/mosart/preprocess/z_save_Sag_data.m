@@ -204,7 +204,7 @@ end
 
 % NOTE: this is the linear index of the slope in [tiles] not the ID
 
-% outID = mos_findgage([tiles.polyhs], xg, yg); % outID = 2634
+% outID = mosart.findgage([tiles.polyhs], xg, yg); % outID = 2634
 outID = 2614; % old config: 2634;
 
 % plot the polygon with the found gage

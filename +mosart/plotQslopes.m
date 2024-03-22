@@ -1,7 +1,10 @@
-function h = mos_plotQslopes(mosart,varargin)
-   %PLOTQLINKS Plots a map of links colored by discharge D
+function h = plotQslopes(mosart,varargin)
+   %PLOTQSLOPES Plots a map of links colored by discharge D
    %
+   %  H = PLOTQSLOPES(MOSART,VARARGIN)
    %
+   % See also:
+
 
    % check if an axis handle is provided (credit to Kelley Kearney, function
    % 'boundedline', for this argument check)

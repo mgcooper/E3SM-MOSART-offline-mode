@@ -1,7 +1,7 @@
-function [schema,info,data] = mos_makemosart(slopes,ftemplate,fsave,opts)
-   %MOS_MAKEMOSARTFILE make mosart parameter file for E3SM (frivinp_rtm)
+function [schema,info,data] = makeMosartFile(slopes,ftemplate,fsave,opts)
+   %MAKEMOSARTFILE make mosart parameter file for E3SM (frivinp_rtm)
    %
-   %     [schema,info,data] = mos_makemosart(slopes,ftemplate,fsave,opts)
+   %  [SCHEMA,INFO,DATA] = MAKEMOSARTFILE(SLOPES,FTEMPLATE,FSAVE,OPTS)
    %
    % Inputs
    %

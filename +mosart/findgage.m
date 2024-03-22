@@ -1,4 +1,4 @@
-function outletID = mos_findgage(slopes,xgage,ygage)
+function outletID = findgage(slopes,xgage,ygage)
 
    outletID = [];
    for n = 1:numel(slopes)

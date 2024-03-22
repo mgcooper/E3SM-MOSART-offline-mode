@@ -1,4 +1,4 @@
-function mosart = mos_clipbasin(mosart,sag,varargin)
+function mosart = clipbasin(mosart,sag,varargin)
 
    % this function finds the hillslopes in the mosart data saved by
    % 'read_output_sag' that are contained within the gaged basin

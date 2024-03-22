@@ -3,25 +3,26 @@ clean
 sitename = 'sag_basin';
 
 % jan 2023
-% 
+%
 % TLDR: should be best to use mk_huc_runoff for trib and sag, but keep this
 % around until a simulation with runoff files produced by this script for both
 % trib and sag and both GPCC.daily.nc and ming pan runoff are confirmed
 % identical. Also, I like th clarity of this version even though its less
-% compact than mos_makerunoff
-% 
-% this is different enough from mos_makerunoff that I cannot tell by
-% inspection if it can be replaced by mk_huc_runoff with call to mos_makerunoff,
-% but I confirmed the runoff file this makes for the full sag basin with
-% GPCC.daily.nc runoff is identical to the one produced by the call to
-% mos_makerunoff (see comparison at end). However, the dimensions of the data
-% written to the .nc file are different, so this needs to be archived until I am
-% certain that the version written by mos_makerunoff is correct. 
+% compact than mosart.makeRunoffFile
+%
+% this is different enough from mosart.makeRunoffFile that I cannot tell by
+% inspection if it can be replaced by mk_huc_runoff with call to
+% mosart.makeRunoffFile, but I confirmed the runoff file this makes for the full
+% sag basin with GPCC.daily.nc runoff is identical to the one produced by the
+% call to mosart.makeRunoffFile (see comparison at end). However, the dimensions
+% of the data written to the .nc file are different, so this needs to be
+% archived until I am certain that the version written by mosart.makeRunoffFile
+% is correct.
 
 % More notes:
 % - this uses GPCC.daily.nc forcing
 % - mk_huc_runoff uses the mingpan sag_YYYY_mosart.nc files Tian made
-% - however, mos_makerunoff appears to work with either forcings
+% - however, mosart.makerunoff appears to work with either forcings
 
 % These notes were here when I opened this:
 % i did not update this for sag_basin. the GPCC.daily.nc does not have
@@ -34,21 +35,24 @@ pathdata = setpath(['interface/hillsloper/' sitename],'data');
 pathtemp = getenv('USER_MOSART_TEMPLATE_PATH');
 pathroff = setpath('e3sm/compyfs/inputdata/lnd/dlnd7/hcru_hcru','data');
 
-% normally would save here, but for comparing with mos_makerunoff, set below
+% normally would save here, but for comparing with mosart.makeRunoffFile, set
+% below
 % pathsave = setpath('e3sm/forcing/sag_basin/','data');
 pathsave = getenv('USER_MOSART_TEMPLATE_PATH'); cd(pathsave);
 
 % fmosart isn't used but keep for now, I probably wanted to compare the var
 % sizes/shapes to frunoff, see info_mos below
-fmosart = fullfile(pathtemp,'MOSART_icom_half_c200624.nc');
-frunoff = fullfile(pathroff,'GPCC.daily.nc');
-fsave   = fullfile(pathsave,'runoff_sag_test.nc');
+fmosart = fullfile(pathtemp, 'MOSART_icom_half_c200624.nc');
+frunoff = fullfile(pathroff, 'GPCC.daily.nc');
+fsave   = fullfile(pathsave, 'runoff_sag_test.nc');
 
-if exist(fsave,'file'); delete(fsave); end
+if isfile(fsave)
+   delete(fsave);
+end
 
 %% load the hillsloper data that has ID and dnID
 
-load(fullfile(pathdata,'mosart_hillslopes'),'mosartslopes');
+load(fullfile(pathdata, 'mosart_hillslopes'), 'mosartslopes');
 
 sagvars     = fieldnames(mosartslopes);
 ID          = [mosartslopes.ID];
@@ -81,9 +85,9 @@ Ravgrs      = reshape(Ravg,nr*nc,1);
 
 % interpolate across all days
 for i = 1:size(R,3)
-    Ri      = reshape(R(:,:,i),nr*nc,1);
-    Rq      = scatteredInterpolant(LONrs,LATrs,Ri);
-    Rs(:,i) = Rq(lon,lat);
+   Ri      = reshape(R(:,:,i),nr*nc,1);
+   Rq      = scatteredInterpolant(LONrs,LATrs,Ri);
+   Rs(:,i) = Rq(lon,lat);
 end
 
 QRUNOFF     = Rs;
@@ -173,7 +177,8 @@ opts.inputGridded = true;
 opts.outputGridded = false;
 opts.save_file = true;
 
-[schema,info,data] = mos_makerunoff(mosartslopes,frunoff,fdomain,fsave,opts);
+[schema, info, data] = mosart.makeRunoffFile(mosartslopes, ...
+   frunoff, fdomain, fsave, opts);
 
 d1 = ncreaddata('runoff_sag_test.nc');
 d2 = ncreaddata('runoff_sag_test_func.nc');
@@ -193,24 +198,24 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % Rq          = scatteredInterpolant(LONrs,LATrs,Ravgrs,'linear');
 % Rsag        = Rq(lon,lat);
 % Rsag2       = interp2(LON,LAT,Ravg,lon,lat);
-% 
-% figure; 
+%
+% figure;
 % plotLinReg(Rsag,Rsag2); ax = gca;
 % ax.XLim = ax.YLim;
 % axis square
-% 
-% figure; 
-% myscatter(Rsag,Rsag2); 
+%
+% figure;
+% myscatter(Rsag,Rsag2);
 % addOnetoOne
 
 % for reference:
-% R           = permute(data.QRUNOFF,[2,1,3]);
-% 
+% R = permute(data.QRUNOFF, [2,1,3]);
+%
 % % this suggests the data is oriented correctly
 % figure;
 % surf(data.lon,data.lat,mean(R,3));
 % view(2); shading flat
-% 
+%
 % % but when LON/LAT are gridded, R has to be flipped upside down
 % [LON,LAT]   = meshgrid(data.lon,data.lat);
 % LAT         = flipud(LAT);
@@ -227,38 +232,38 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % %==========================================================================
 % frunoff     = [path.data 'GPCC.daily.nc'];
 % fsave       = [path.save 'runoff_sag_test.nc'];
-% 
+%
 % info        = ncinfo(frunoff);
 % vars        = {info.Variables.Name};
 % data        = ncreaddata(frunoff,vars);
 % data.QDRAI  = permute(data.QDRAI,[2,1,3]);
 % data.QOVER	= permute(data.QOVER,[2,1,3]);
 % data.QRUNOFF= permute(data.QRUNOFF,[2,1,3]);
-% 
+%
 % figure;
 % worldmap
 % surfm(data.lat,data.lon,mean(data.QRUNOFF,3));
-% 
-% 
+%
+%
 % %==========================================================================
-% %% 1. Load the hillsloper data and modify it for MOSART 
+% %% 1. Load the hillsloper data and modify it for MOSART
 % %==========================================================================
 % load([path.sag 'sag_hillslopes']);
-% 
+%
 % % assign values to each variable
 % xc      = [newslopes.longxy]';
 % yc      = [newslopes.latixy]';
 % mask    = (int32(ones(size([newslopes.longxy]))))';
 % frac    = (ones(size([newslopes.longxy])))';
 % ncells  = size(mask,1);
-% 
+%
 % % compute the surface area of each sub-basin in units of steradians
 % for i = 1:length(newslopes)
 %     ilat        = newslopes(i).Y_hs;
 %     ilon        = newslopes(i).X_hs;
 %     area(i,1)   = llpoly2steradians(ilat,ilon);
 % end
-% 
+%
 % % compute the bounding box of each sub-basin
 % for i = 1:length(newslopes)
 %     ilat        = newslopes(i).Y_hs;
@@ -266,11 +271,11 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 %     [x,y,f]     = ll2utm([ilat,ilon]);
 %     poly        = polyshape(x,y);
 %     [xb,yb]     = boundingbox(poly);
-%     [latb,lonb] = utm2ll(xb,yb,f);  
+%     [latb,lonb] = utm2ll(xb,yb,f);
 %     xv(:,i)     = [lonb(1) lonb(2) lonb(2) lonb(1)];
 %     yv(:,i)     = [latb(1) latb(1) latb(2) latb(2)];
 % end
-% 
+%
 % myschema.xc     = ncinfo(frunoff,'xc');
 % myschema.yc     = ncinfo(frunoff,'yc');
 % myschema.xv     = ncinfo(frunoff,'xv');
@@ -278,7 +283,7 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % myschema.mask   = ncinfo(frunoff,'mask');
 % myschema.area   = ncinfo(frunoff,'area');
 % myschema.frac   = ncinfo(frunoff,'frac');
-% 
+%
 % % modify the size to match the sag domain
 % myschema.xc.Size    = [ncells,1];
 % myschema.yc.Size    = [ncells,1];
@@ -287,7 +292,7 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % myschema.mask.Size  = [ncells,1];
 % myschema.area.Size  = [ncells,1];
 % myschema.frac.Size  = [ncells,1];
-% 
+%
 % myschema.xc.Dimensions(1).Length    = ncells;
 % myschema.yc.Dimensions(1).Length    = ncells;
 % myschema.xv.Dimensions(2).Length    = ncells;
@@ -295,7 +300,7 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % myschema.mask.Dimensions(1).Length  = ncells;
 % myschema.area.Dimensions(1).Length  = ncells;
 % myschema.frac.Dimensions(1).Length  = ncells;
-% 
+%
 % ncwriteschema(fsave,myschema.xc);
 % ncwriteschema(fsave,myschema.yc);
 % ncwriteschema(fsave,myschema.xv);
@@ -303,7 +308,7 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % ncwriteschema(fsave,myschema.mask);
 % ncwriteschema(fsave,myschema.area);
 % ncwriteschema(fsave,myschema.frac);
-% 
+%
 % %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % % write the variable values
 % %~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -314,7 +319,7 @@ isequal(transpose(d1.QRUNOFF),squeeze(d2.QRUNOFF))
 % ncwrite(fsave,'mask',mask);
 % ncwrite(fsave,'area',area);
 % ncwrite(fsave,'frac',frac);
-% 
-% % read in the new file to compare with the old file                        
+%
+% % read in the new file to compare with the old file
 % %==========================================================================
 % newinfo.domain  = ncinfo(fsave);

@@ -1,15 +1,15 @@
-function mosart = mos_readoutput(pathdata, varargin)
-   %MOS_READOUTPUT Read mosart .nc files and return the outlet discharge in m3/s
+function mosart = readoutput(pathdata, varargin)
+   %READOUTPUT Read mosart .nc files and return the outlet discharge in m3/s
    %
-   %  mosart = mos_readoutput(pathdata) returns the
-   %  RIVER_DISCHARGE_OVER_LAND_LIQ data in the .nc mosart output files in
-   %  pathdata, assumed to be annual files
+   %  MOSART = READOUTPUT(PATHDATA) returns the RIVER_DISCHARGE_OVER_LAND_LIQ
+   %  data in the mosart nc output files in pathdata, assumed to be annual
+   %  files.
    %
-   %  mosart = mos_readoutput(pathdata,var) returns the data for variable var in
-   %  the in the .nc mosart output files in pathdata
+   %  MOSART = READOUTPUT(PATHDATA, VAR) returns the data for variable VAR in
+   %  the in the nc mosart output files in pathdata.
    %
-   %  mosart = mos_readoutput(___,'monthly') returns the data for variable var
-   %  in the in the .nc mosart output files in pathdata
+   %  MOSART = READOUTPUT(_, 'monthly') returns the data for variable VAR
+   %  in the in the nc mosart output files in pathdata.
    %
    % See also
 
@@ -137,7 +137,7 @@ function mosart = mos_readoutput(pathdata, varargin)
    % NOTE: This section will require refactoring in light of ncreaddata refactor
    % which automatically transposes the data so the time dimension is last. Code
    % outside of this if size(D,2)==30 section has been refactored.
-   
+
    % If the data files are monthly, reshape to annual
    if size(D, 2) == 30
       nyears = size(D, 1) * size(D, 2) / 365;
@@ -183,7 +183,7 @@ function mosart = mos_readoutput(pathdata, varargin)
       Davg = transpose(squeeze(mean(D, 1))); % ndays x ncells
       Dstd = transpose(squeeze(std(D, [], 1))); % ndays x ncells
 
-      % Permute then reshape into a daily timeseries. 
+      % Permute then reshape into a daily timeseries.
       D = permute(D, [3, 1, 2]); % ndays x nyears x ncells
       T = permute(T, [2, 1]); % ndays x nyears
       D = reshape(D, ndays*nyears, ncells);

@@ -108,7 +108,7 @@ if isfile(fname_save)
 end
 
 % Create the file
-[schema, info, data] = mos_makemosart( ...
+[schema, info, data] = mosart.makeMosartFile( ...
    mosartslopes, fname_template, fname_save, opts);
 cd(path_mosart_file_save)
 

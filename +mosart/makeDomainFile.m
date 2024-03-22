@@ -1,11 +1,11 @@
-function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, ...
-      fsave, opts)
-   % MOSARTMAKEDOMAINFILE build domain file for MOSART
+function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, fsave, opts)
+   %MAKEDOMAINFILE Make MOSART domain file
    %
-   %  Inputs
+   %  [SCHEMA, INFO, DATA] = MAKEDOMAINFILE(SLOPES, FTEMPLATE, FSAVE, OPTS)
+   %
+   % Inputs
    %
    %     'slopes' : a structure with the following fields:
-   %
    %     longxy   : latitude of computational unit, scalar
    %     latixy   : longitude of computational unit, scalar
    %     area     : area in m2
@@ -208,7 +208,7 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, ...
    %       [y,x] = utm2ll(xb,yb,f);
    %    end
    %
-   %    % looks like I commented this out b/c new data has Lat/Lon so I can just 
+   %    % looks like I commented this out b/c new data has Lat/Lon so I can just
    %    % use geoquadpt directly, meaning steps above aren't necessary
    %    % data.xv(:,n) = [x(1) x(2) x(2) x(1)];
    %    % data.yv(:,n) = [y(1) y(1) y(2) y(2)];

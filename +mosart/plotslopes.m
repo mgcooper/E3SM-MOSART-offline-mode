@@ -1,4 +1,9 @@
-function h = mos_plotslopes(slopes,links,nodes)
+function h = plotslopes(slopes,links,nodes)
+   %PLOTSLOPES
+   %
+   %  H = PLOTSLOPES(SLOPES,LINKS,NODES)
+   %
+   % See also:
 
    skipnodes = false;
    if nargin == 2

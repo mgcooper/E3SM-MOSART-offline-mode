@@ -77,7 +77,7 @@ for n = 1:nyears
    frunoff = fullfile(path_runoff_data, ['sag_' thisyear '_mosart.nc']);
    fsave   = fullfile(path_runoff_save, ['runoff_' sitename '_' thisyear '.nc']);
 
-   [schema, info, data] = mos_makerunoff( ...
+   [schema, info, data] = mosart.makeRunoffFile( ...
       mosartslopes, frunoff, fdomain, fsave, opts);
 
 end
@@ -91,16 +91,16 @@ end
 % startyear = 2017;
 % endyear = 2017;
 % path_runoff_files = '/Users/coop558/work/data/e3sm/forcing/sag_basin';
-% 
+%
 % % Copy to the directory above b/c makeDummyRunoffFiles creates a dummy file
 % % before and after, thus 2016 would be overwritten
 % copyfile(fullfile(path_runoff_files, 'mingpan', 'runoff_sag_basin_2017.nc'), ...
 %    fullfile(path_runoff_files, 'runoff_sag_basin_2017.nc'));
-% 
+%
 % % Create the dummy file(s)
 % CopyInfo = makeDummyRunoffFiles(sitename, startyear, endyear, ...
 %    path_runoff_files, savefile, 'nobackups');
-% 
+%
 % % Move the dummy 2018 file to the mingpan folder
 % movefile(fullfile(path_runoff_files, 'runoff_sag_basin_2018.nc'), ...
 %    fullfile(path_runoff_files, 'mingpan'));
@@ -140,7 +140,7 @@ if opts.checkdata == true
       data = ncreaddata(fsave);
 
       tiledlayout('flow'); nexttile;
-      plot(sum(squeeze(data.QDRAI),1)); 
+      plot(sum(squeeze(data.QDRAI),1));
       ylabel('daily runoff [mm/s]'); nexttile
       plot(cumsum(sum(squeeze(data.QDRAI),1)));
       ylabel('cumulative runoff [mm/s]');

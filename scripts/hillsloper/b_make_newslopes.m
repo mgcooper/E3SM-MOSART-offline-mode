@@ -113,7 +113,7 @@ links(ismember([links.ds_node_ID], rm_node_ID)).link_ID
 
 mosartslopes = mosart.hillsloperToMosart(links, slopes, basins);
 
-% h = mos_plotslopes(mosartslopes,slopes,nodes);
+% h = mosart.plotslopes(mosartslopes, slopes, nodes);
 
 %% save the data (don't overwrite the original! use 'mosart_hillslopes')
 

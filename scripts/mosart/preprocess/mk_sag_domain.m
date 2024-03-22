@@ -60,7 +60,7 @@ fname_domain = ...
    fullfile(...
    path_domain_file_template, opts.ftemplate);
 
-% farea is an optional file 
+% farea is an optional file
 fname_area_file = ...
    fullfile( ...
    path_area_file, opts.runID, opts.farea);
@@ -75,7 +75,7 @@ fname_save = ...
 load(fullfile(path_domain_data, 'mosart_hillslopes.mat'), 'mosartslopes');
 
 
-% plot 
+% plot
 figure
 histogram([mosartslopes.rwid])
 ylabel('count')
@@ -87,12 +87,12 @@ if opts.custom_area
    % the ats hillslopes are ordered by hillsloper hs_id, but mosartslopes are
    % ordered by 1:numel(links). the links.hs_id field maps between them.
    A = combineHillslopeArea(fname_area_file,transpose([mosartslopes.hs_id]));
-   
+
    % replace the mosartslopes area field with the updated one
    mosartslopes = addstructfields(mosartslopes,A,'newfieldnames','area');
-   
+
    % this shows the ordering is correct
-   % figure; scatterfit(A, [mosartslopes.area]) 
+   % figure; scatterfit(A, [mosartslopes.area])
 end
 
 %% write the file
@@ -104,12 +104,12 @@ if isfile(fname_save)
 end
 
 [schema, info, data] = ...
-   mosartMakeDomainFile(mosartslopes, fname_domain, fname_save, opts);
+   mosart.makeDomainFile(mosartslopes, fname_domain, fname_save, opts);
 
-% go to the ouput folder 
+% go to the ouput folder
 cd(path_domain_file_save)
 
-% not sure what this was, maybe plot the boxes around each node 
+% not sure what this was, maybe plot the boxes around each node
 if opts.testplot
    macfig
    for n = 1:numel(data.xc)
@@ -122,14 +122,14 @@ if opts.testplot
 end
 
 
-% % compare with the one produced by mk_huc_domain 
+% % compare with the one produced by mk_huc_domain
 % ftest = '/Users/coop558/work/data/e3sm/config/domain_trib_test.nc';
 % fcomp = compareMosartFiles(fname_save,ftest);
-% 
+%
 % % says xc not equal
 % d1 = ncreaddata(fname_save);
 % d2 = ncreaddata(ftest);
-% 
+%
 % isequal(d1.xc,wrapTo360(d2.xc))
 % figure; scatterfit(d1.xc,wrapTo360(d2.xc))
 

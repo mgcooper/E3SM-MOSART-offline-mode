@@ -1,8 +1,8 @@
-function [schema, info, data] = mos_makerunoff(slopes, frunoff, fdomain, ...
+function [schema, info, data] = makeRunoffFile(slopes, frunoff, fdomain, ...
       fsave, opts)
-   %MOS_MAKERUNOFF
+   %MAKERUNOFFFILE
    %
-   %  [schema,info,data] = mos_makerunoff(slopes,frunoff,fdomain,fsave,opts)
+   %  [SCHEMA,INFO,DATA] = MAKERUNOFFFILE(SLOPES,FRUNOFF,FDOMAIN,FSAVE,OPTS)
    %
    % Inputs
    %
@@ -18,7 +18,7 @@ function [schema, info, data] = mos_makerunoff(slopes, frunoff, fdomain, ...
    %
    % See also:
 
-   % Unlike mos_makemosart and mos_makedomain, this function doesn't
+   % Unlike makemosartfile and makedomainfile, this function doesn't
    % use any information from the hillslopes structure except for the position
    % information which is used to interpolate the runoff to the slopes
 
@@ -155,8 +155,8 @@ function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
          copySchema  = ncinfo(fdomain,copyVar);
          copyData    = ncread(fdomain,copyVar);
 
-         copySchema.Name             = renameVars{n};
-         copySchema.Attributes(3)    = [];
+         copySchema.Name = renameVars{n};
+         copySchema.Attributes(3) = [];
 
          % add a standard name field
          newAtts             = copySchema.Attributes;
@@ -167,7 +167,7 @@ function [schema,info,data] = listedRunoffOutput(Runoff,LON,LAT,...
          newAtts(1).Name     = 'standard_name';
          newAtts(1).Value    = renameNames{n};
 
-         copySchema.Attributes   = newAtts;
+         copySchema.Attributes = newAtts;
 
          ncwriteschema(fsave,copySchema);
          ncwrite(fsave,renameVars{n},copyData);
@@ -264,7 +264,9 @@ function [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
    if opts.savefile
 
       % delete the file if it exists, otherwise there will be errors
-      if exist(fsave,'file'); delete(fsave); end
+      if isfile(fsave)
+         delete(fsave);
+      end
 
       % copy over these vars from the domain file to the runoff file
       %copyVars    = {'xc','yc','mask','area','frac'};
@@ -305,7 +307,7 @@ function [schema,info,data] = griddedRunoffOutput(Runoff,LON,LAT, ...
       % modify values that change for each variable, and write the new data
       for n = 1:numel(newVars)
 
-         thisVar     = newVars{n};
+         thisVar = newVars{n};
 
          % this works as long as I put the data in a var that existed in
          % the frunoff file

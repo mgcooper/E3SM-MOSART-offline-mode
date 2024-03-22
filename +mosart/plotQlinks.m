@@ -1,5 +1,9 @@
-function h = mos_plotQlinks(links,slopes,varargin)
+function h = plotQlinks(links,slopes,varargin)
    %PLOTQLINKS Plots a map of links colored by discharge D
+   %
+   %  H = PLOTQLINKS(LINKS, SLOPES, VARARGIN)
+   %
+   % See also:
 
    if nargin>2 && strcmp(varargin{1},'log')
 

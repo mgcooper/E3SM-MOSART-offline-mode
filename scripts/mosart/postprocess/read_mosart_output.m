@@ -68,11 +68,11 @@ sag.site_name = sitename;
 
 % if h0 and h1 files exist, h1 = daily data saved annually, but depending
 % on how the tapes are set up the daily data can be h0 so gotta set this
-mosart = mos_readoutput(pathdata);
+mosart = mosart.readoutput(pathdata);
 % Fails with new full sag until sag.mask updated, also the obs in sag struct end
 % in 2007
 try
-   mosart = mos_clipbasin(mosart, sag);
+   mosart = mosart.clipbasin(mosart, sag);
 catch
 end
 
