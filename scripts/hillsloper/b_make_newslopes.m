@@ -112,7 +112,7 @@ test = hillsloper.fixda(basins, links, nodes);
 
 %% Build a table with the MOSART input file information
 
-mosartslopes = makeMosartSlopes(links, slopes, basins, Data);
+mosartslopes = mosart.hillsloperToMosart(links, slopes, basins, Data);
 
 % h = mos_plotslopes(mosartslopes,slopes,nodes);
 
