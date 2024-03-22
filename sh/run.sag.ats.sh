@@ -3,8 +3,8 @@
 # USER case-specific values
 SITE_NAME='sag_basin'
 RUN_ID='ats' 													# 'ats' or 'pan'
-START_YEAR=2013
-END_YEAR=2019
+START_YEAR=2014
+END_YEAR=2018
 (( NUM_YEARS=END_YEAR-START_YEAR+1 ))
 DLND_DIR=/qfs/people/coop558/data/e3sm/usrdat
 DLND_FILE=user_dlnd.streams.txt.lnd.gpcc.${RUN_ID}.${SITE_NAME}

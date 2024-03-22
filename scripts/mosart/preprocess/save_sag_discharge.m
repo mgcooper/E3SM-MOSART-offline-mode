@@ -13,3 +13,10 @@ sag.flow = flow.Q;
 % figure; plot(sag.time,sag.flow);
 
 save(fullfile(getenv("MATLAB_ACTIVE_PROJECT_DATA_PATH"),"sag_discharge"), "sag")
+
+%% Update Feb 2024
+
+% Need to confirm what data exists in Sag basin
+
+% 'SAGAVANIRKTOK R NR PUMP STA 3 AK'	 '15908000' 
+% 'SAGAVANIRKTOK R TRIB NR PUMP STA 3 AK'	 '15906000'

@@ -13,7 +13,7 @@ function outlet = getOutletFeatures(slopes, links, nodes, varargin)
    % Also try this, added in findDownstreamLinks:
    % newlinks([newlinks.isOutlet]);
    
-   [args, params, nargs] = parseparampairs(varargin, true);
+   [args, params, nargs] = parseparampairs(varargin, [], 'asstruct');
 
    ID = [links.link_ID];
    dnID = [links.ds_link_ID];
@@ -55,9 +55,13 @@ function outlet = getOutletFeatures(slopes, links, nodes, varargin)
 end
 
 function plotOutlet(outlet, bounds)
-   figure;
-   plot(bounds.X, bounds.Y); hold on;
-   plot([outlet.link.X], [outlet.link.Y], 'r');
-   plot([outlet.node.X], [outlet.node.Y], 'o', 'MarkerFaceColor', 'g', ...
-      'MarkerEdgeColor', 'none');
+   try
+      figure;
+      plot(bounds.X, bounds.Y); hold on;
+      plot([outlet.link.X], [outlet.link.Y], 'r');
+      plot([outlet.node.X], [outlet.node.Y], 'o', 'MarkerFaceColor', 'g', ...
+         'MarkerEdgeColor', 'none');
+   catch ME
+
+   end
 end

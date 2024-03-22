@@ -16,7 +16,7 @@ savedata = false;
 % Let me know if you have any question about this data file, or if you need
 % other variables, or if you want to change it to other types.
 
-filepath = '/Users/coop558/work/data/interface/ATS';
+filepath = '/Users/coop558/work/data/interface/ATS/sag_basin';
 filename = fullfile(filepath, 'sag_hillslope_discharge.nc');
 
 fileinfo = ncinfo(filename);
@@ -86,7 +86,7 @@ for n = 1:numel(groupnames)/2
    idx_n = n;
    idx_p = find(ismember(groupnames, name_p));
 
-   % discharge(:, n) = discharge(:, idx_n) + discharge(:, idx_p);
+   discharge(:, n) = discharge(:, idx_n) + discharge(:, idx_p);
    hsarea(n) = hsarea(idx_n) + hsarea(idx_p);
    wbfrac(n) = (wbfrac(idx_n) * hsarea(idx_n) + wbfrac(idx_p) * hsarea(idx_p)) / hsarea(n);
    lat(n) = (lat(idx_n) + lat(idx_p)) / 2;
@@ -94,7 +94,7 @@ for n = 1:numel(groupnames)/2
 end
 
 % Remove the columns following the combined values
-% discharge = discharge(:, 1:numel(groupnames)/2);
+discharge = discharge(:, 1:numel(groupnames)/2);
 hsarea = hsarea(:, 1:numel(groupnames)/2);
 wbfrac = wbfrac(:, 1:numel(groupnames)/2);
 lon = lon(:, 1:numel(groupnames)/2);
@@ -118,7 +118,12 @@ Data = array2timetable(discharge, 'RowTimes', Time, 'VariableNames', slopes);
 
 % Add the attributes
 Data = settableprops(Data, {'Area', 'WaterFrac', 'Lon', 'Lat'}, ...
-   'table', {hsarea, wbfrac, lon, lat});
+   'variable', {hsarea, wbfrac, lon, lat});
+Data = settableprops(Data, {'Area_units'}, ...
+   'table', 'm2');
+
+% Add the units
+Data = settableunits(Data, 'm3 d-1');
 
 %% Save the data
 if savedata == true

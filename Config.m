@@ -1,4 +1,4 @@
-function Config(varargin)
+function Config(sitename)
    % CONFIG set user configuration, environment variables, etc.
    %
    %  See also Setup
@@ -12,11 +12,15 @@ function Config(varargin)
    % USER_ATS_VERSION
    % USER_ATS_DATA_PATH
 
+   arguments
+      sitename (1, :) char = 'sag_basin'
+   end
+
    thispath = fileparts(mfilename('fullpath'));
 
    % domain name
    setenv('USER_MOSART_DOMAIN_NAME', ...
-      'sag_basin' ...
+      sitename ...
       );
 
    % root path where data exists
@@ -31,6 +35,11 @@ function Config(varargin)
 
    % path to runoff forcing files
    setenv('USER_MOSART_RUNOFF_PATH', ...
+      '/Users/coop558/work/data/e3sm/forcing' ...
+      );
+
+   % march 2024 - makes more sense to call it E3SM_FORCING
+   setenv('USER_E3SM_FORCING_PATH', ...
       '/Users/coop558/work/data/e3sm/forcing' ...
       );
 

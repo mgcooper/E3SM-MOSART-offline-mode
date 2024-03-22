@@ -34,7 +34,7 @@ function [schema, info, data] = mosartMakeDomainFile(slopes, ftemplate, ...
    data.yc = [slopes.latixy]';
    data.mask = int32(ones(ncells,1));
    data.frac = double(ones(ncells,1));
-   data.area = ([slopes.area].*4.*pi./Aearth)'; % steradians
+   data.area = ([slopes.area] * 4 * pi / Aearth)'; % steradians
 
    % compute the bounding box of each sub-basin
    data.xv = nan(4,ncells);                    % x vertices

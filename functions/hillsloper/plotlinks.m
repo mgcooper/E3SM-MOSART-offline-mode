@@ -10,6 +10,9 @@ function plotlinks(links, start_ID, highlight)
       start_ID = links([links.isOutlet]); % hillsloper.outlet_link_ID;
       start_ID = 2661;
    end
+   if nargin < 3
+      highlight = start_ID;
+   end
 
    figontop
    ids = [links.link_ID];
