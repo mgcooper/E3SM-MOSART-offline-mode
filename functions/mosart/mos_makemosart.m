@@ -63,21 +63,25 @@ function [schema,info,data] = mos_makemosart(slopes,ftemplate,fsave,opts)
 
 
    %% make the 'ele' array
+
+   % March 2024 - try removing this, it shouldn't be necessary
    nele = 11;
    ele = nan(nele,nCells);
-
    for n = 1:length(slopes)
       ele(:,n) = slopes(n).ele;
-      %    slopes(n).rwid = 30; % 20 Jan 2023 changed 50 to 30 to test
-      %    slopes(n).rwid0 = 30; % 20 Jan 2023 changed 50 to 30 to test
-      %    slopes(n).rdep = 4; % 20 Jan 2023 changed 2 to 4 to test
-      %    slopes(n).nr = 0.5;
-      slopes(n).fdir = double(slopes(n).fdir);
    end
    ele = ele';
-
    for n = 1:length(slopes)
       slopes(n).ele = ele;
+   end
+
+   %% make the flow direction and other values
+   for n = 1:length(slopes)
+      slopes(n).fdir = double(slopes(n).fdir);
+      % slopes(n).rwid = 30; % 20 Jan 2023 changed 50 to 30 to test
+      % slopes(n).rwid0 = 30; % 20 Jan 2023 changed 50 to 30 to test
+      % slopes(n).rdep = 4; % 20 Jan 2023 changed 2 to 4 to test
+      % slopes(n).nr = 0.5;
    end
 
    % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % %

@@ -2,11 +2,15 @@ function outletID = mos_findgage(slopes,xgage,ygage)
 
    outletID = [];
    for n = 1:numel(slopes)
-      polyhs = polyshape(slopes(n).X_hs,slopes(n).Y_hs);
+      if ~isa(slopes(n), 'polyshape')
+         polyhs = polyshape(slopes(n).X_hs,slopes(n).Y_hs);
+      else
+         polyhs = slopes(n);
+      end
       if inpolygon(xgage,ygage,polyhs.Vertices(:,1),polyhs.Vertices(:,2))
          outletID = n;
       else
-         continue;
+         continue
       end
       if ~isempty(outletID)
          break
