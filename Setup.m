@@ -1,20 +1,16 @@
 function Setup()
-% SETUP set paths etc.
-% 
-% See also Config
+   % SETUP set paths etc.
+   %
+   % See also Config
 
-% temporarily turn off warnings about paths not already being on the path
-warning off
+   % temporarily turn off warnings about paths not already being on the path
+   withwarnoff('MATLAB:rmpath:DirNotFound');
 
-% Get the path to this file, in case Setup is run from some other folder. More
-% robust than pwd(), but assumes the directory structure has not been modified.
-thispath = fileparts(mfilename('fullpath'));
+   % Get the path to this file
+   thispath = fileparts(mfilename('fullpath'));
 
-% add all paths then remove git paths
-addpath(genpath(thispath));
-rmpath(genpath(fullfile(thispath,'.git')));
+   % add all paths then remove git paths
+   pathadd(thispath);
 
-% add paths set in Config
-
-% turn warning back on
-warning on
+   % add paths set in Config
+end

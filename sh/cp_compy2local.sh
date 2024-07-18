@@ -3,29 +3,34 @@
 # i think this one has the error chang
 # /compyfs/liao313/04model/pyhexwatershed/susquehanna/pyhexwatershed20220901016/
 
+SRCNAME=reservoir_icom_reservoir_mpas_1d_icomdomain_c230403_interbasin.nc
+SRCPATH=$COMPY_ROOT_PATH/compyfs/zhou014/ICoM/dataset/reservoir_icom_reservoir_mpas_1d_icomdomain_c230403_interbasin.nc
+DSTPATH=$(pwd)/$SRCNAME
+rsync -a -e ssh -P "$SRCPATH" "$DSTPATH"
+
 # ------------------------------------------------------------
 # copy the gcam water demand data
 # ------------------------------------------------------------
 
-SRCPATH=$COMPY_ROOT_PATH/compyfs/zhou014/ICoM/GCAM_waterdemand_nc/rcp8.5
-DSTPATH=$E3SM_DATA_PATH/compyfs/inputdata/waterdemand
-SRCNAME=RCP8.5_GCAM_water_demand
-MONTHS=( 01 02 03 04 05 06 07 08 09 10 11 12 )
-# for i in "${arrayName[@]}"
+# SRCPATH=$COMPY_ROOT_PATH/compyfs/zhou014/ICoM/GCAM_waterdemand_nc/rcp8.5
+# DSTPATH=$E3SM_DATA_PATH/compyfs/inputdata/waterdemand
+# SRCNAME=RCP8.5_GCAM_water_demand
+# MONTHS=( 01 02 03 04 05 06 07 08 09 10 11 12 )
+# # for i in "${arrayName[@]}"
 
-for year in {1981..2018}; do
-    # for month in 01 02 03 04 05 06 07 08 09 10 11 12; do
-    for month in "${MONTHS[@]}"; do
+# for year in {1981..2018}; do
+#     # for month in 01 02 03 04 05 06 07 08 09 10 11 12; do
+#     for month in "${MONTHS[@]}"; do
 
-        FILENAME=${SRCNAME}_${year}_${month}.nc
+#         FILENAME=${SRCNAME}_${year}_${month}.nc
 
-        # TEST FIRST
-        # printf "%s\n" "$SRCPATH/$FILENAME"
+#         # TEST FIRST
+#         # printf "%s\n" "$SRCPATH/$FILENAME"
 
-        # copy the files
-        rsync -a -e ssh -P "$SRCPATH/$FILENAME" "$DSTPATH/$FILENAME"
-    done
-done
+#         # copy the files
+#         rsync -a -e ssh -P "$SRCPATH/$FILENAME" "$DSTPATH/$FILENAME"
+#     done
+# done
 
 # ------------------------------------------------------------
 # copy an individual file to this directory:

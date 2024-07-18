@@ -46,7 +46,7 @@ CU2(BasinWeights.IMesh,:) = CU.';
 
 % Plot the data to confirm
 % check = mean(CU2,2,'omitnan');
-% figure; plotMeshVertices(XV,YV); hold on;
+% figure; plotMeshVertices(XV, YV, "numverts", 8); hold on;
 % scatter(XC(check>0),YC(check>0),30,check(check>0),'filled'); 
 % colorbar;
 

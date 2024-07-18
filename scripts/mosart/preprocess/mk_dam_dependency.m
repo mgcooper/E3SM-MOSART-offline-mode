@@ -154,16 +154,18 @@ end
 % % [latline,lonline] = makeMeshFlowline(dnID,latmesh,lonmesh);
 % % figure; geoshow(vertcat(latline{:}),vertcat(lonline{:}));
 % 
-% % % subset one set of dependent cells and write a shapefile
-% % % idam = 7;
-% % idam = find(Dams.Name == "ADAM T. BOWER MEMORIAL");
-% % IDdepends = rmnan(DependentCells(idam,:));
-% % idepends = find(ismember([Mesh.lCellID],IDdepends));
-% % tmp = Mesh(idepends);
-% % 
-% % if savedata == true
-% %    writeGeoShapefile(tmp,['data/shp/dependentCells' num2str(idam) '.shp'])
-% % end
+% subset one set of dependent cells and write a shapefile
+idam = 10;
+idam = find(Dams.DAM_NAME == "ADAM T. BOWER MEMORIAL");
+idam = find(Dams.DAM_NAME == "RAYSTOWN DAM");
+IDdepends = rmnan(DependentCells(idam,:));
+idepends = find(ismember([Mesh.lCellID],IDdepends));
+tmp = Mesh(idepends);
+
+if savedata == true
+   fname = fullfile(pwd, 'data/shp/', ['dependentCells' num2str(idam) '.shp']);
+   writeGeoShapefile(tmp, fname)
+end
 % 
 % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % % 
 % 

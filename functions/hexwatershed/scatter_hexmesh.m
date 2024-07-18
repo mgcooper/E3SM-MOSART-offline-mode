@@ -1,24 +1,21 @@
 function scatter_hexmesh(Mesh,varargin)
-%scatter_hexmesh plots the hexwatershed mesh using scatter 
+   %scatter_hexmesh plots the hexwatershed mesh using scatter
 
-%------------------------------------------------------------------------------
-p              = inputParser;
-p.FunctionName = 'scatter_hexmesh';
+   parser = inputParser;
+   parser.FunctionName = mfilename;
+   addRequired(parser, 'Mesh');
+   addParameter(parser, 'FaceColor', 'k', @(x)ischar(x)|isnumeric(x));
+   addParameter( parser, 'MarkerSize',40,  @(x)isnumeric(x));
+   parse(parser,Mesh,varargin{:});
 
-addRequired(   p, 'Mesh');
-addParameter(  p, 'FaceColor', 'k', @(x)ischar(x)|isnumeric(x));
-addParameter(  p, 'MarkerSize',40,  @(x)isnumeric(x));
+   FaceColor = parser.Results.FaceColor;
+   MarkerSize = parser.Results.MarkerSize;
 
-parse(p,Mesh,varargin{:});
+   hold on
+   for n = 1:numel(Mesh)
+      lat = Mesh(n).dLatitude_center_degree;
+      lon = Mesh(n).dLongitude_center_degree;
 
-FaceColor = p.Results.FaceColor;
-MarkerSize = p.Results.MarkerSize;
-%------------------------------------------------------------------------------
-
-hold on;
-for n = 1:numel(Mesh)
-   lat = Mesh(n).dLatitude_center_degree;
-   lon = Mesh(n).dLongitude_center_degree;
-   
-   scatter(lon,lat,MarkerSize,FaceColor,'filled');
+      scatter(lon,lat,MarkerSize,FaceColor,'filled');
+   end
 end

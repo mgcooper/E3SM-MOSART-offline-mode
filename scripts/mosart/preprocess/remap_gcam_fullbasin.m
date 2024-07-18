@@ -69,7 +69,8 @@ hold on; plot(P);
 %% test reverse
 
 [VP,W,IN,ON,A] = clipRasterByPoly(VC,LON,LAT,P,'areasum','ReverseMapping',true); 
-sum(VP)
+
+[VC sum(VP)]
 
 WIN = horzcat(W{:});
 nzc = find(sum(WIN > 0, 2));

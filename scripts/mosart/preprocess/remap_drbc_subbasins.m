@@ -77,7 +77,7 @@ PX = cellmap(@wrapTo360,PX);
 %% check inputs
 
 % length(unique([XC,YC],'rows'))
-
+xgrid
 %% clip the mesh to the DRB outline
 
 [~,~,IN] = exactremap(YC,XC,YC,P,'clip','GridOption','unstructured');
