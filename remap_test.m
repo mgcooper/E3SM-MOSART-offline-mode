@@ -21,7 +21,7 @@ PX = {Basins.Bounds.X}.';
 PY = {Basins.Bounds.Y}.';
 
 % convert to lat lon then repackage 
-[PX,PY] = polyvec(PX,PY);
+[PX,PY] = cellsToCoords(PX,PY);
 
 % Use DRB full basin to first clip the mesh
 if usegeo == true
@@ -32,7 +32,7 @@ else
    P = polyshape(x,y);
 end
 
-[PX,PY] = polycells(PX,PY);
+[PX,PY] = coordsToCells(PX,PY);
 
 % figure; 
 % geomap(plat,plon); 

@@ -13,19 +13,19 @@ function [P,PX,PY,PA] = loadDrbcBasins(varargin)
    PY = {Basins.Bounds.Y}.';
 
    % convert to lat lon then repackage
-   [PX,PY] = polyvec(PX,PY);
+   [PX,PY] = cellsToCoords(PX,PY);
 
    % Use DRB full basin to first clip the mesh
    if usegeo == true
       P = polyshape([wrapTo360(Sdrbc.Lon(:)),Sdrbc.Lat(:)]);
       [PY,PX] = utm2ll(PX,PY,18,'nad83');
       PX = wrapTo360(PX);
-      % PX = cellmap(@wrapTo360,PX); % only needed after going back to polycells
+      % PX = cellmap(@wrapTo360,PX); % only needed after going back to cells
    else
       [x,y] = ll2utm(Sdrbc.Lat(:),Sdrbc.Lon(:),18,'wgs84');
       P = polyshape(x,y);
    end
-   [PX,PY] = polycells(PX,PY);
+   [PX,PY] = coordsToCells(PX,PY);
 
    warning('on','MATLAB:polyshape:repairedBySimplify');
 
