@@ -1,10 +1,11 @@
 clean
 
+job = withwarnoff('MATLAB:table:ModifiedAndSavedVarnames');
+
 % Read and save the Toniolo discharge observations for Sag River
 
-% To pick up on this, Need to read in each sheet and organize, but more
-% difficult is assigning a vector reach to each gage, see notes below, basically
-% I think all of htem except DSS4 and ASS1 should work
+% To pick up on this, Need to read in each sheet and organize, and assign a
+% vector link ID to each gage, see notes below.
 
 % mgc: The data were either .xlsx or .csv. I converted the .csv to .xlsx for a
 % consistent workflow, but retained the og .csv files.
@@ -32,14 +33,12 @@ clean
 % DSS5 - keep, on east mainstem inside our delination, snap nearest should work
 % ASS1 - keep, but snap to nearest may not work, see notes
 
-
-
 % notes on each site by comparing it in qgis to the vector flowline vs the map
 %
 % DSS5: should be a good choice for the lowermost gage, it is along the same
 % "main stem" that we use in our delineation, upstream of where it appears to
 % braid off into the second "main stem" which we exclude, but which ABPB/DSS1
-% are along.
+% are along. UPDATE - all of the discharge data is 7777 meaning no data.
 %
 % DSS2: close to the "main stem" in the narrows, should be able to find nearest
 % flowline and snap to it
@@ -90,9 +89,24 @@ pathdata = fullfile(getenv('USERDATAPATH'), 'interface', ...
    'Discharge_River', 'Sagavanirktok River', 'Toniolo_2020_report');
 
 % Read the metadata table
-metadata = readtable(fullfile(pathdata, "site_data.xlsx"));
+metadata = readtable(fullfile(pathdata, "toniolo_metadata.xlsx"));
 metadata = renamevars(metadata, ["Latitude_WGS84_", "Longitude_WGS84_"], ...
    ["latitude", "longitude"]);
+
+% Define sitenames alphabetically to match timetable variable ordering.
+sitename = {'ASS1', 'DSS2', 'DSS3', 'DSS4', 'DSS5'};
+
+% Assign mosart link IDs to each site, obtained visually in qgis.
+linkID = [2365, 2605, 2561, 2616, 2593];
+link_ID_map = containers.Map(sitename, linkID);
+
+% Subset the metadata. This orders rows by sitename, which ensures
+% metadata_discharge is the same order as sitename and linkID. The table is
+% ordered identically 
+metadata_discharge = metadata(ismember(metadata.SiteID, sitename), :);
+
+% Add the linkID
+metadata_discharge.mosart_linkID = linkID(:);
 
 %% Read the discharge data
 
@@ -101,6 +115,10 @@ metadata = renamevars(metadata, ["Latitude_WGS84_", "Longitude_WGS84_"], ...
 
 filelist = listfiles(pathdata, pattern="discharge.xlsx", ...
    subfolders=true, aslist=true, asstring=true, fullpath=true);
+
+% The site ID is the first 4 digits of filename, exclude files which are not
+% included in the sitename-linkID map
+filelist = filelist(contains(filelist, sitename));
 
 runoff = cell(numel(filelist), 1);
 flags = cell(numel(filelist), 1);
@@ -122,6 +140,8 @@ for n = 1:numel(filelist)
    % Separate the table into discharge and flags
    flags{n} = removevars(thisdata, "Discharge_m3_s_");
    thisdata = removevars(thisdata, "DischargeFlag");
+   
+   % Rename by sitename
    thisdata = renamevars(thisdata, "Discharge_m3_s_", thisname);
 
    % Flags 7777, 6999 exist in the Discharge column, not DischargeFlag
@@ -137,15 +157,64 @@ Data = synchronize(runoff{:}, 'hourly', func, 'IncludedEdge', 'left');
 Data = renametimetabletimevar(Data);
 
 % Add units property
-Data = settableprops(Data, 'units', 'table', 'm3 s-1');
+Data = settableunits(Data, 'm3 s-1');
 
 % Add locations
-latitude = metadata.latitude( ...
-   ismember(metadata.SiteID, Data.Properties.VariableNames));
-longitude = metadata.longitude( ...
-   ismember(metadata.SiteID, Data.Properties.VariableNames));
-Data = settableprops(Data, 'latitude', 'variable', latitude);
-Data = settableprops(Data, 'longitude', 'variable', longitude);
+[~, index] = ismember(Data.Properties.VariableNames, metadata.SiteID);
+Data = settableprops(Data, 'latitude', 'variable', metadata.latitude(index));
+Data = settableprops(Data, 'longitude', 'variable', metadata.longitude(index));
+
+% Add link_ID lookup
+[~, index] = ismember(Data.Properties.VariableNames, sitename);
+Data = settableprops(Data, 'linkID', 'variable', linkID(index));
+
+% For reference, but to me this is more complicated than ismember method 
+% link_ID_list = cell2mat(values(link_ID_map, Data.Properties.VariableNames));
+
+%% Plots
+figure
+plot(Data.Time, Data{:, :})
+legend(Data.Properties.VariableNames)
+ylabel(unique(Data.Properties.VariableUnits))
+
+% Note: All of the DSS5 data is missing
+% figure; plot(Data.Time, Data.DSS5)
+
+%% Save the data
+
+if savedata == true
+
+   % Save a matfile
+   filename = fullfile(getenv('USERDATAPATH'), 'interface', 'sag_basin', ...
+      'sag_toniolo_discharge.mat');
+   save(filename, 'Data')
+
+   
+   % Save a shapefile
+   filename = fullfile(getenv('USERGISPATH'), 'sag_toniolo_discharge_sites.shp');
+
+   % Convert to a geostruct and write the shapefile
+   S = table2geostruct(metadata_discharge, "geometry", "Point");
+   writeGeoShapefile(S, filename)
+   
+   % Note - I created this then assigned custom symbology in qgis. I don't think
+   % it would interfere if I wrote over it, but no further processing of the
+   % full metadata table was done, unlike the metadata_discharge table which was
+   % subset to just the discharge sites and the linkIDs were added.
+   % % Save a shapefile
+   % filename = fullfile(getenv('USERGISPATH'), 'sag_toniolo_sites.shp');
+   %
+   % % Convert to a geostruct and write the shapefile
+   % S = table2geostruct(metadata, "geometry", "Point");
+   % writeGeoShapefile(S, filename)
+
+   % For reference, I thought if I created a geotable it might write the .prj
+   % file, which is the purpose of writeGeoShapefile, but it did not.
+   % GT = table2geotable(metadata);
+   % GT.Shape.GeographicCRS = projwgs84();
+   % shapewrite(GT, filename);
+
+end
 
 %% Synchronize the flags timetables to a common hourly calendar
 
@@ -167,41 +236,4 @@ Flags.M = "Measured";
 % M-Measured,
 % 7777-data not collected,
 % 6999-bad/missing
-
-%% Plots
-
-Data = renametimetabletimevar(Data);
-
-figure
-plot(Data.Time, Data{:, :})
-legend(Data.Properties.VariableNames)
-
-% All of the DSS5 data is missing
-figure
-plot(Data.Time, Data.DSS5)
-
-%% Save the data
-
-if savedata == true
-
-   % Save a matfile
-   filename = fullfile(getenv('USERDATAPATH'), 'interface', 'sag_basin', ...
-      'sag_toniolo_discharge.mat');
-   save(filename, 'Data')
-
-   % Save a shapefile
-   filename = fullfile(getenv('USERGISPATH'), 'sag_toniolo_sites.shp');
-
-   % Convert to a geostruct and write the shapefile
-   S = table2geostruct(metadata, "geometry", "Point");
-   writeGeoShapefile(S, filename)
-
-   % For reference, I thought if I created a geotable it might write the .prj
-   % file, which is the purpose of writeGeoShapefile, but it did not.
-   % GT = table2geotable(metadata);
-   % GT.Shape.GeographicCRS = projwgs84();
-   % shapewrite(GT, filename);
-
-end
-
 
