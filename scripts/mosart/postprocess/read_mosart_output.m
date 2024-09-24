@@ -1,11 +1,41 @@
 clean
 
+% have:
+% 15908000
+% 15905100
+
+% dont have:
+% 15906000
+
+% temporary notes about the small gaged site bo sent coordinates, I created a
+% shapefile and identified the nearest link: 2652. I added it to the part below
+% in teh script where the discharge is extracted, rewrote the table, and sent it
+% to bo
+
+% The coordinate of the USGS station (station id: 15905100) is
+% (191402.68025042323, 2061090.432332672). I created a short horizontal line
+% using the y coordinate of the station and found the intersection point of the
+% horizontal line with the nearest link. The intersection point is
+% (191515.43233267195, 2061090.432332672). The CRS is epsg3338. 
+
+% lat = 68 + 27/60 + 8/3600;
+% lon = -(149 + 22/60 + 24/3600);
+% proj = loadprojcrs('AKA');
+% [x, y] = projfwd(proj, lat, lon)
+% printf({x, y})
+% 
+% sqmi2sqkm(297)
+% % Drainage area: 297 square miles
+% % Datum of gage: 2,586.68 feet above   NAVD88.
+
+%%
+
 % This is an example of how the MOSART output can be processed using the
 % functions in functions/. These functions take the unstructured MOSART
 % output and map the runoff onto the hillslopes, locate the hillslope that
 % contains the basin outlet, and computes the runoff.
 
-savedata = true;
+savedata = false;
 savefigs = false;
 sitename = 'sag_basin';
 runid = 'sag_basin.2014.2018.run.2024-03-22-122924.ats';

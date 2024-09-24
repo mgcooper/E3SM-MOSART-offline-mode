@@ -5,8 +5,8 @@ function config = readConfigFiles(sitename, whichfiles, opts)
       sitename = 'sag_basin'
       whichfiles (1, :) cell {mustBeMember(whichfiles, ...
          {'domain', 'mosart'})} = {'domain', 'mosart'}
-      opts.casename = '' % 'ats'
-      opts.runid = '' % sag_basin
+      opts.casename char = [] % 'ats'
+      opts.runid char = [] % sag_basin
    end
    filepath = getenv('USER_E3SM_CONFIG_PATH');
    casename = opts.casename;
@@ -21,6 +21,11 @@ function config = readConfigFiles(sitename, whichfiles, opts)
          case 'domain'
 
             filename = ['domain_' sitename '_' casename '.nc'];
+
+            % For future reference, if strings are used, an empty casename will
+            % become string.empty() instead of empty char '', and the trailing
+            % underscore will not be appended.
+            % filename = [char(strjoin(["domain", sitename, casename], "_")), '.nc'];
 
          case 'mosart'
 

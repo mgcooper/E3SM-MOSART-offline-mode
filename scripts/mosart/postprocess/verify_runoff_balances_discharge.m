@@ -88,6 +88,62 @@ function verify_runoff_balances_discharge
    plot(Time(idx), cumsum(Runoff(idx)))
 
 
+
+   %% %%%%%%%%%% TEST - QSUB/QSUR
+   roff = RunoffData{:, :};
+   qsub = transpose(horzcat(mosartData.data(:).QSUB_LIQ));
+
+   cumsumDischarge = cumsum(Discharge);
+   cumsumRunoff = cumsum(Runoff);
+   cumsumQsub = cumsum(sum(qsub, 2));
+
+   figure; hold on
+   plot(cumsumDischarge);
+   plot(cumsumRunoff)
+   plot(cumsumQsub)
+   legend('Discharge (outlet)', 'Input Runoff', 'QSUB')
+   ylabel('Cumulative Runoff')
+   xlabel('Days since 2014-01-01')
+
+   % Differences, compare with storage - actually I already know from up above
+   % that dR is ~1.3e7, and dS is ~4.4e6, and R matches Qsub.
+
+
+   % Maybe the outlet hillslope runoff is not going into the channel?
+   % STopped here b/c I need to figure out which hillslope is the outlet in the
+   % ATS Runoff data table
+   % cumsumRunoffOutlet =
+   % plot()
+
+   % PICK UP - was gonna load the mosart input files using
+   % mosart.readConfigFiles and double check if the ID, dnID is consecutive
+
+   figure
+   plot(sum(qsub, 2), sum(roff, 2), 'o');
+   addOnetoOne
+
+   figure
+   plot(qsub(:), roff(:), 'o');
+   addOnetoOne
+
+   figure
+   plot(cumsumRunoff); hold on
+   plot(cumsumQsub)
+   legend('Runoff Input', 'QSUB_LIQ')
+
+
+   % varnames = {'QGWL_LIQ', 'QSUB_LIQ', 'QSUR_LIQ'};
+   % for n = 1:numel(mosartData.data)
+   %    for m = 1:numel(varnames)
+   %       var = varnames{m};
+   %       if sum(mosartData.data(n).(var)(:) ~= 0) > 0
+   %          fprintf('not zero: %s\n', var)
+   %       end
+   %    end
+   % end
+
+   %%%%%%%%%% TEST
+
    %%
 
    % The domain file is not used, the dlnd file sets the runoff file as the

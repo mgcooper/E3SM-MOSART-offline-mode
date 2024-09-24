@@ -1,26 +1,34 @@
-function mosartData = readoutput(pathdata, varargin)
+function mosartData = readoutput(pathname, kwargs)
    %READOUTPUT Read mosart .nc files and return the outlet discharge in m3/s
    %
-   %  DATA = READOUTPUT(PATHDATA) returns the RIVER_DISCHARGE_OVER_LAND_LIQ
-   %  data in the mosart nc output files in pathdata, assumed to be annual
-   %  files.
+   %  DATA = READOUTPUT(PATHNAME) returns the RIVER_DISCHARGE_OVER_LAND_LIQ
+   %  data in the mosart nc output files saved in folder PATHNAME. The files
+   %  are assumed to contain daily data with one file per year (annual files).
    %
-   %  DATA = READOUTPUT(PATHDATA, VAR) returns the data for variable VAR in
-   %  the in the nc mosart output files in pathdata.
+   %  DATA = READOUTPUT(PATHNAME, VARNAME=VARLIST) returns the data for all
+   %  variables in VARLIST which exist in the nc mosart output files.
    %
    %  DATA = READOUTPUT(_, 'monthly') returns the data for variable VAR
-   %  in the in the nc mosart output files in pathdata.
+   %  in the in the nc mosart output files in PATHNAME.
    %
    % See also
 
    % this works if the data are daily, organized as annual files,
    % need to modify for monthly averages
 
-   % parse inputs
-   [pathdata, args] = parseinputs(mfilename, pathdata, varargin{:});
+   arguments
+      pathname char {mustBeFolder} % the run/ dir
+      kwargs.varname char = 'RIVER_DISCHARGE_OVER_LAND_LIQ'
+      kwargs.filetype char {mustBeMember(kwargs.filetype, {'h1','h0'})} = 'h0'
+      kwargs.basinOutletID double = []
+      kwargs.subbasinOutletID double = []
+      kwargs.basinOutletVarname = 'RIVER_DISCHARGE_TO_OCEAN_LIQ'
+   end
+   basinOutletID = kwargs.basinOutletID;
+   subbasinOutletID = kwargs.subbasinOutletID;
 
    % main code
-   filelist = dir(fullfile(pathdata, ['*.mosart.' args.filetype '*']));
+   filelist = dir(fullfile(pathname, ['*.mosart.' kwargs.filetype '*']));
 
    if isempty(filelist)
       error('no files found');
@@ -28,71 +36,128 @@ function mosartData = readoutput(pathdata, varargin)
 
    % read the nc info, make a list of variables, get lat/lon
    numfiles = numel(filelist);
-   pathdata = filelist(1).folder; % the run/ dir
    fileinfo = ncinfo(fullfile(filelist(1).folder, filelist(1).name));
    varnames = {fileinfo.Variables.Name};
 
-   lon = double(ncread(fullfile(pathdata, filelist(1).name), 'lon'));
-   lat = double(ncread(fullfile(pathdata, filelist(1).name), 'lat'));
+   [lat, lon, x, y] = readCoordinates(filelist);
 
-   % project the lat/lon to alaska albers or fall back to utm
-   try
-      proj_alaska_albers = projcrs(3338, 'Authority', 'EPSG');
-      [x, y] = projfwd(proj_alaska_albers, lat, lon);
-   catch ME
-      if strcmp(ME.identifier, 'MATLAB:license:checkouterror')
-         [x, y] = ll2utm([lat, lon]); % use utm
-      end
-   end
-
-   % read all the data
+   % Read all of the data into one struct array.
    for n = numfiles:-1:1
-      data(n) = ncreaddata(fullfile(pathdata, filelist(n).name), varnames=varnames);
+      data(n) = ncreaddata( ...
+         fullfile(pathname, filelist(n).name), varnames=varnames);
    end
 
-   % stitch the discharge data into one long timeseries
-   % init the discharge array (ncells x ndays x nyears = 3266 x 365 x 30)
-   [ncells, ndays] = size(data(1).(args.varname));
+   % Obtain the ID and dsID for each link, and set the outlet dsID nan.
+   ID = data(1).GINDEX(:, 1);
+   dsID = data(1).DSIG(:, 1);
+   dsID(dsID == 0) = nan;
 
-   D = nan(numfiles, ncells, ndays);
-   S = nan(numfiles, ncells, ndays); % channel storage [m3]
-   T = nan(numfiles, ndays);
+   % Locate the basin outlet ID
+   basinOutletID = findbasinOutletID(basinOutletID, data(1));
 
-   % locate the outlet id
+   % Extract the RIVER_DISCHARGE_OVER_LAND_LIQ
+   [Time, Discharge, Storage] = extractDischargeData(data, filelist, ...
+      kwargs.varname, basinOutletID, kwargs.basinOutletVarname);
+   
+   % Reset numfiles to account for any missing data (see subfunction)
+   numfiles = size(Discharge, 1);
+
+   % If the data files are monthly, reshape to annual
+   if size(Discharge, 2) == 30
+      % This may require refactoring due to refactored ncreaddata which
+      % automatically transposes the data with the time dimension last. 
+      % All code outside this monthly data section has been refactored.
+      [Time, Discharge, Davg, Dstd] = reshapeMonthlyData(Time, Discharge);
+   else
+      [Time, Discharge, Davg, Dstd] = reshapeDailyData(Time, Discharge);
+   end
+
+   % Subset the subbasin outlets
    try
-      outID = find(~isnan(data(1).RIVER_DISCHARGE_TO_OCEAN_LIQ(:, 1)));
-
-      % note:
-      % outID = unique(data(1).OUTLETG(:));
-
-   catch ME
-      if strcmp(ME.message,'Unrecognized field name "RIVER_DISCHARGE_TO_OCEAN_LIQ".')
-         % this should mean that the mosart files are incl2 or higher and don't
-         % contain the RIVER_DISCHARGE_TO_OCEAN_LIQ variable because the
-         % frivinp_rtm file didn't request it. the outlet should be the index
-         % with all nan data, but the runoff data is missing in this case
-         try
-            outID = find(all(isnan(data(1).RIVER_DISCHARGE_OVER_LAND_LIQ(:, 1)),1));
-         catch ME
-            if strcmp(ME.message,'Unrecognized field name "RIVER_DISCHARGE_OVER_LAND_LIQ".')
-               rethrow(ME)
-            end
-         end
-      end
+      subbasinDischarge = Discharge(:, subbasinOutletID);
+   catch
    end
 
-   % save RIVER_DISCHARGE_OVER_LAND_LIQ
+   % Package output
+   
+   % Apr 2024 - do not assign the full "data" struct, which contains all of the
+   % nc file data. Need to refactor this function to read all of the relevant 
+   % mosart variables into a timetable. 
+   % mosartData.data = data; 
+
+   mosartData.T = Time;
+   mosartData.outletDischarge = Discharge(:, basinOutletID);
+   mosartData.D = Discharge;
+   mosartData.Davg = Davg;
+   mosartData.Dstd = Dstd;
+   mosartData.info = fileinfo;
+   mosartData.lat = lat;
+   mosartData.lon = lon;
+   mosartData.x = x;
+   mosartData.y = y;
+   mosartData.outID = basinOutletID;
+   mosartData.units = 'm3 s-1';
+   mosartData.S = Storage;
+   mosartData.S_units = 'm3';
+   mosartData.subbasinDischarge = subbasinDischarge;
+   mosartData.subbasinOutletID = subbasinOutletID;
+   
+   % Convert the data to a timetable.
+%    Discharge = timetable(Time, Discharge, VariableNames=string(ID));
+% 
+%    mosartData.Time = Time;
+%    mosartData.Discharge = Discharge;
+% 
+%    mosartData.Discharge_annualAverage = Davg;
+%    mosartData.Discharge_annualStandardDeviation = Dstd;
+%    mosartData.fileinfo = fileinfo;
+%    mosartData.lat      = lat;
+%    mosartData.lon      = lon;
+%    mosartData.x        = x;
+%    mosartData.y        = y;
+%    mosartData.outID    = basinOutletID;
+%    mosartData.units    = 'm3 s-1';
+%    mosartData.S        = Storage;
+%    mosartData.S_units  = 'm3';
+%    mosartData.subbasinD = subbasinDischarge;
+%    mosartData.subbasinOutletID = subbasinOutletID;
+
+   % Qmodavg = mean(reshape(Dmod,365,nyrs),2);
+   % Tavg = datenum(Tobs(1:365));
+   %
+   % figure; plot(Davg(:,100)); hold on;
+   % plot(Davg(:,100)+(2.*Dstd(:,100)./sqrt(nfiles)));
+   % plot(Davg(:,100)-(2.*Dstd(:,100)./sqrt(nfiles)));
+   %
+   % figure; plot(T,D(:,100)); hold on;
+   % for n = 1:nfiles
+   %   plot(Tyrs(n,:),squeeze(Dyrs(n,:,100)),':','Color','r');
+   % end
+end
+%%
+function [T, D, S] = extractDischargeData(data, filelist, ...
+      varname, outletID, outletVarname)
+   
+   % Retrieve dimensions
+   numfiles = numel(data);
+   [numcells, numdays] = size(data(1).(varname));
+   
+   % Initialize arrays to stitch the discharge into one multi-year timeseries.
+   D = nan(numfiles, numcells, numdays); % years x cells x days
+   S = nan(numfiles, numcells, numdays); % channel storage [m3]
+   T = nan(numfiles, numdays);
+
    % mcdate is the actual calendar date, format is YYYYMMDD
-   for n = 1:numfiles
+   for n = 1:numel(data)
       try
-         D(n, :, :) = data(n).(args.varname);
+         D(n, :, :) = data(n).(varname);
          T(n, :) = data(n).mcdate;
       catch
       end
 
-      % add the outlet
+      % Add the basin outlet, which is nan otherwise.
       try
-         D(n, outID, :) = data(n).RIVER_DISCHARGE_TO_OCEAN_LIQ(outID, :);
+         D(n, outletID, :) = data(n).(outletVarname)(outletID, :);
       catch
       end
    end
@@ -117,8 +182,7 @@ function mosartData = readoutput(pathdata, varargin)
    % Discharge = readalldischarge(data,ndays,ncells);
 
    % check if any files have all nan data
-   allNan  = false(numfiles, 1);
-   for n = 1:numfiles
+   for n = numfiles:-1:1
       allNan(n) = all(isnan(reshape(D(n, :, :), 1, [])));
    end
 
@@ -132,96 +196,105 @@ function mosartData = readoutput(pathdata, varargin)
 
    D = D(~allNan, :, :);
    T = T(~allNan, :);
-   numfiles = size(D, 1);
-
-   % NOTE: This section will require refactoring in light of ncreaddata refactor
-   % which automatically transposes the data so the time dimension is last. Code
-   % outside of this if size(D,2)==30 section has been refactored.
-
-   % If the data files are monthly, reshape to annual
-   if size(D, 2) == 30
-      nyears = size(D, 1) * size(D, 2) / 365;
-
-      if mod(nyears, 1) ~= 0
-         % the monthly data files truncate the data but I am not sure how. for
-         % the 1997-2003 runs the monthly files have 2550 values, but a no-leap
-         % calendar has 2555. Prob best to abandon monthly files anyway. UPDATE:
-         % the monthly files are written thirty days at a time, so each file
-         % isn't a calendar month. There are 7 months with 31 days then subtract
-         % two days for february and you get 5 days, which is the number missing
-         % but thats for one year, so still not sure. method below is a hacky
-         % fix but it appends 5 nan values at the end.
-         D = permute(D, [2,1,3]);
-         D = reshape(D, [], size(D,3));
-         t1 = year(datetime(T(1), 'ConvertFrom', 'yyyymmdd'));
-         t2 = year(datetime(T(end), 'ConvertFrom', 'yyyymmdd'));
-         TT = transpose(datetime(t1,1,1):caldays(1):datetime(t2,12,31));
-         T0 = datetime(reshape(transpose(T),size(D,1),1),'ConvertFrom','yyyymmdd');
-         T0 = T0 - days(1);
-         DD = array2timetable(D, 'RowTimes', T0);
-         DD = retime(DD, TT, 'fillwithmissing');
-         nyears = numel(unique(year(T0)));
-         ndays = 365;
-         D = reshape(table2array(rmleapinds(DD)), ndays, nyears, []);
-
-         Tyrs = reshape(rmleapinds(TT), nyears, ndays);
-
-         Davg = squeeze(mean(D, 2));
-         Dstd = squeeze(std(D, [], 2));
-         Dyrs = D;
-
-         % put it in a long timeseries
-         D = reshape(D, ndays * nyears, ncells);
-         T = rmleapinds(TT);
+end
+%%
+function basinOutletID = findbasinOutletID(basinOutletID, data)
+   found = notempty(basinOutletID);
+   if not(found)
+      try
+         basinOutletID = unique(data.OUTLETG(:));
+         % also: basinOutletID = ID(isnan(dsID) | dsID==0);
+      catch
+         basinOutletID = mosart.findoutletID(data);
       end
-   else
-
-      % D is nyears/files x ndays x ncells. If data is annual this computes
-      % mean annual D and mean annual std dev (operate on dim 1, then transpose)
-      Tyrs = datetime(T, 'ConvertFrom', 'yyyymmdd') - days(1);
-      nyears = numel(unique(year(Tyrs)));
-      Davg = transpose(squeeze(mean(D, 1))); % ndays x ncells
-      Dstd = transpose(squeeze(std(D, [], 1))); % ndays x ncells
-
-      % Permute then reshape into a daily timeseries.
-      D = permute(D, [3, 1, 2]); % ndays x nyears x ncells
-      T = permute(T, [2, 1]); % ndays x nyears
-      D = reshape(D, ndays*nyears, ncells);
-      T = datetime(T(:), 'ConvertFrom', 'yyyymmdd');
-
-      % Shift the calendar back one day
-      T = T - days(1);
    end
+end
+%%
+function [lat, lon, x, y] = readCoordinates(filelist)
+   
+   lon = double( ...
+      ncread(fullfile(filelist(1).folder, filelist(1).name), 'lon'));
+   lat = double( ...
+      ncread(fullfile(filelist(1).folder, filelist(1).name), 'lat'));
 
-   % package output
-   mosartData.data     = data;
-   mosartData.D        = D;
-   mosartData.T        = T;
-   mosartData.Davg     = Davg;
-   mosartData.Dstd     = Dstd;
-   mosartData.info     = fileinfo;
-   mosartData.lat      = lat;
-   mosartData.lon      = lon;
-   mosartData.x        = x;
-   mosartData.y        = y;
-   mosartData.outID    = outID;
-   mosartData.units    = 'm3 s-1';
-   mosartData.S        = S;
-   mosartData.S_units  = 'm3';
+   % Project the lat/lon to alaska albers or fall back to utm
+   % This seems unneccessary and error prone to fall back to utm so I 
+   % commented that out and return empty x,y
+   try
+      proj_alaska_albers = projcrs(3338, 'Authority', 'EPSG');
+      [x, y] = projfwd(proj_alaska_albers, lat, lon);
+   catch ME
+      warning( ...
+         'Reprojection to lat lon failed, add Alaska Albers coordinates manually if needed.')
+      x = []; y = [];
+      % if strcmp(ME.identifier, 'MATLAB:license:checkouterror')
+      %    [x, y] = ll2utm([lat, lon]); % use utm
+      % end
+   end
+end
+%%
+function [T, D, Davg, Dstd] = reshapeDailyData(T, D)
+   
+   [nyears, ncells, ndays] = size(D);
+   
+   % D is (years/files x cells x days). If data is annual this computes
+   % mean annual D and mean annual std dev (operate on dim 1, then transpose)
+   Tyrs = datetime(T, 'ConvertFrom', 'yyyymmdd') - days(1);
+   
+   assertEqual(nyears, numel(unique(year(Tyrs))));
+   
+   % Average over years (down the first dimension)
+   Davg = transpose(squeeze(mean(D, 1))); % ndays x ncells
+   Dstd = transpose(squeeze(std(D, [], 1))); % ndays x ncells
 
-   % Qmodavg = mean(reshape(Dmod,365,nyrs),2);
-   % Tavg = datenum(Tobs(1:365));
-   %
-   % figure; plot(Davg(:,100)); hold on;
-   % plot(Davg(:,100)+(2.*Dstd(:,100)./sqrt(nfiles)));
-   % plot(Davg(:,100)-(2.*Dstd(:,100)./sqrt(nfiles)));
-   %
-   % figure; plot(T,D(:,100)); hold on;
-   % for n = 1:nfiles
-   %   plot(Tyrs(n,:),squeeze(Dyrs(n,:,100)),':','Color','r');
-   % end
+   % Permute then reshape into a daily timeseries.
+   D = permute(D, [3, 1, 2]); % ndays x nyears x ncells
+   T = permute(T, [2, 1]); % ndays x nyears
+   D = reshape(D, nyears * ndays, ncells);
+   T = datetime(T(:), 'ConvertFrom', 'yyyymmdd');
+
+   % Shift the calendar back one day
+   T = T - days(1);
 end
 
+%%
+function [T, D, Davg, Dstd] = reshapeMonthlyData(T, D)
+   nyears = size(D, 1) * size(D, 2) / 365;
+
+   if mod(nyears, 1) ~= 0
+      % the monthly data files truncate the data but I am not sure how. for
+      % the 1997-2003 runs the monthly files have 2550 values, but a no-leap
+      % calendar has 2555. Prob best to abandon monthly files anyway. UPDATE:
+      % the monthly files are written thirty days at a time, so each file
+      % isn't a calendar month. There are 7 months with 31 days then subtract
+      % two days for february and you get 5 days, which is the number missing
+      % but thats for one year, so still not sure. method below is a hacky
+      % fix but it appends 5 nan values at the end.
+      D = permute(D, [2,1,3]);
+      D = reshape(D, [], size(D,3));
+      t1 = year(datetime(T(1), 'ConvertFrom', 'yyyymmdd'));
+      t2 = year(datetime(T(end), 'ConvertFrom', 'yyyymmdd'));
+      TT = transpose(datetime(t1,1,1):caldays(1):datetime(t2,12,31));
+      T0 = datetime(reshape(transpose(T),size(D,1),1),'ConvertFrom','yyyymmdd');
+      T0 = T0 - days(1);
+      DD = array2timetable(D, 'RowTimes', T0);
+      DD = retime(DD, TT, 'fillwithmissing');
+      nyears = numel(unique(year(T0)));
+      ndays = 365;
+      D = reshape(table2array(rmleapinds(DD)), ndays, nyears, []);
+
+      Tyrs = reshape(rmleapinds(TT), nyears, ndays);
+
+      Davg = squeeze(mean(D, 2));
+      Dstd = squeeze(std(D, [], 2));
+      Dyrs = D;
+
+      % put it in a long timeseries
+      D = reshape(D, ndays * nyears, ncells);
+      T = rmleapinds(TT);
+   end
+end
+%%
 function debug
 
    % loop over all vars and determine which ones have valid data
@@ -336,23 +409,6 @@ function debug
    % {'STORAGE_LIQ'                  }
    % {'TOTAL_DISCHARGE_TO_OCEAN_LIQ' }
 
-end
-
-%%
-function [pathdata, args] = parseinputs(funcname, pathdata, varargin)
-
-   varnames = {'RIVER_DISCHARGE_OVER_LAND_LIQ'};
-   filetypes = {'h1','h0'};
-   validvars = @(x)~isempty(validatestring(x,varnames));
-   validfiles = @(x)~isempty(validatestring(x,filetypes));
-
-   p = inputParser;
-   p.FunctionName = funcname;
-   p.addRequired('pathdata',@(x)ischar(x));
-   p.addOptional('varname','RIVER_DISCHARGE_OVER_LAND_LIQ',validvars);
-   p.addOptional('filetype','h0',validfiles);
-   parse(p,pathdata,varargin{:});
-   args = p.Results;
 end
 
 %%

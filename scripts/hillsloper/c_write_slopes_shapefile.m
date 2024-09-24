@@ -1,7 +1,13 @@
 clean
 
+% Use the processed mosart input hillsloper data to write new shapefiles with
+% fieldnames and values that match mosart input files.
+
 sitename = getenv('USER_MOSART_DOMAIN_NAME');
 opts = const('save_shp',true,'plot_links',true);
+
+% Apr 2024 - Confirming that the flattened links file was created (in February)
+% in both aka and geo projection.
 
 % the reason this is needed is because the slopes are split into two from
 % Jon, so in b_make_newslopes I combine them into one slope per link and

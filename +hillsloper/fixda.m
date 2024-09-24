@@ -16,7 +16,7 @@ function basins = fixda(basins, links, nodes)
       this_node = hillsloper.getnode(nodes, this_link.ds_node_ID, 'node_ID');
 
       % nodes.conn is a vector of link_IDs for the upstream/downstream links of
-      % each node. It is 3x1 at 3-way confluences, and 2x1 at at 2-way. Not sure
+      % each node. It is 3x1 at 3-way confluences, and 2x1 at 2-way. Not sure
       % if this will fail if a 4-way confluence is involved, which should only
       % occur with the "fixed" topology.
       if numel(this_node.conn) > 2
