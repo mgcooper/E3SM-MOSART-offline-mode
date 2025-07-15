@@ -52,7 +52,7 @@ CU2(BasinWeights.IMesh,:) = CU.';
 
 %% make the files
 
-pathsave = "/Users/coop558/work/data/e3sm/forcing/icom_domain";
+pathsave = fullfile(getenv('HOME'), "work/data/e3sm/forcing/icom_domain");
 filenames = strcat("icom_domain_water_use_",string(GcamWeights.Time),".nc");
 filenames = fullfile(pathsave,filenames);
 

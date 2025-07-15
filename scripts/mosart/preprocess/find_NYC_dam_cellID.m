@@ -1,6 +1,6 @@
 clean
 
-pathadd('/Users/coop558/work/data/e3sm/config')
+pathadd(fullfile(getenv('HOME'), 'work/data/e3sm/config'))
 data = ncreaddata('MOSART_Mid-Atlantic_MPAS_c220107.nc');
 
 damlat = dmsToDegrees([41, 25, 5; 41, 5, 10]);
